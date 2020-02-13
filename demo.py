@@ -98,4 +98,7 @@ while True:
     #    window["bild1"].update(image_filename="vortrag.png")
     if event == "übernehmen":
         window["usedPlanets"].update(values["selectPlanets"])
+    if event in [p.name for p in default_planets]:
+        window["c_"+event.lower()].update(not values["c_"+event.lower()])
+
 print("Bye")
