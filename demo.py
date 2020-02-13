@@ -28,6 +28,7 @@ class Planet():
 sandwich_planets = []
 default_planets = []
 #for planetname in ["Merkur", "Venus", "Erde", "Mars", "Jupiter", "Saturn", "Uranus", "Neptun", "Pluto"]:
+default_planets.append(Planet("Sun", image="sun.png"))
 default_planets.append(Planet("Merkur", image="merkur.png"))
 default_planets.append(Planet("Venus",  image="merkur.png"))
 default_planets.append(Planet("Erde",   image="erde.png"))
@@ -58,16 +59,25 @@ col1 = sg.Column(key="planet1", layout=[[sg.Text('la la la', key="text1"), ],
                                          sg.Text("o"), sg.InputText(key="o1", size=(4, 1)),
                                          sg.Text("t"), sg.InputText(key="t1", size=(4, 1))],
 
+
                                         ])
 
 #[sg.ProgressBar(100, orientation='h', size=(20, 20),
 #                key='progressbar')],
 ## [sg.Listbox(default_planets,key="listbox", select_mode=sg.LISTBOX_SELECT_MODE_MULTIPLE,
 ##                size=(10, 10)),
+cols = []
+for p in default_planets:
+    print(p.name)
+    cols.append(  sg.Col(layout=[[sg.Button( p.name, tooltip=p.name, image_filename=os.path.join("data",p.name.lower()+".png"), image_subsample=3, border_width=0, button_color=("black" if p.name == "sun" else "yellow",None) )],
+                             [sg.Checkbox(text="",default=True, key="c_" + p.name.lower())]]) )
+
 
 layout = [
 
     [sg.Text('Planeten Sandwich Solar System', size=(30, 1))],
+    cols,
+
     [sg.InputText('This is my text')],
     [sg.Combo(values=default_planets,key="selectPlanets"),
      sg.Button("übernehmen")],
@@ -89,4 +99,3 @@ while True:
     if event == "übernehmen":
         window["usedPlanets"].update(values["selectPlanets"])
 print("Bye")
-
