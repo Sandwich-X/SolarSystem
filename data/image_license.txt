@@ -1,0 +1,3 @@
+images from Wikipedia
+
+s_mars.png: CC0 https://de.wikipedia.org/wiki/Datei:Mars_symbol.svg
