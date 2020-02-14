@@ -26,21 +26,22 @@ class Planet():
         return self.name
 
 sandwich_planets = []
-default_planets = []
-#for planetname in ["Merkur", "Venus", "Erde", "Mars", "Jupiter", "Saturn", "Uranus", "Neptun", "Pluto"]:
-default_planets.append(Planet("Sun", image="sun.png"))
-default_planets.append(Planet("Merkur", image="merkur.png"))
-default_planets.append(Planet("Venus",  image="merkur.png"))
-default_planets.append(Planet("Erde",   image="erde.png"))
-default_planets.append(Planet("Mars",   image="mars.png"))
-default_planets.append(Planet("Jupiter",image="jupiter.png"))
-default_planets.append(Planet("Saturn", image="saturn.png"))
-default_planets.append(Planet("Uranus", image="uranus.png"))
-default_planets.append(Planet("Neptun", image="neptun.png"))
-default_planets.append(Planet("Pluto",  image="pluto.png"))
+default_planets = {}
+#for planetname in ["Sun", "Merkur", "Venus", "Erde", "Mars", "Jupiter", "Saturn", "Uranus", "Neptun", "Pluto"]:
+default_planets["Sun"] = Planet("Sun", image=os.path.join("data", "sun.png"), mass=1500)
+default_planets["Merkur"] = Planet("Merkur", image=os.path.join("data","merkur.png"), mass=2)
+default_planets["Venus"] = Planet("Venus",  image=os.path.join("data","venus.png"), mass=3)
+default_planets["Earth"] = Planet("Earth",   image=os.path.join("data","erde.png"), mass=4)
+default_planets["Mars"] = Planet("Mars",   image=os.path.join("data","mars.png"), mass=3)
+default_planets["Jupiter"] = Planet("Jupiter",image=os.path.join("data","jupiter.png"), mass =14)
+default_planets["Saturn"] = Planet("Saturn", image=os.path.join("data","saturn.png"), mass=13)
+default_planets["Uranus"] = Planet("Uranus", image=os.path.join("data","uranus.png"), mass=7)
+default_planets["Neptun"] = Planet("Neptun", image=os.path.join("data","neptun.png"), mass=6)
+default_planets["Pluto"] = Planet("Pluto",  image=os.path.join("data","pluto.png"), mass=1)
 
-print(default_planets)
-
+print(default_planets.keys())
+planet_names = list(default_planets.keys())
+allchecks = [True for p in default_planets]
 mypics = []
 for root, dirs, files in os.walk("."):
     # print(files)
@@ -50,55 +51,75 @@ for root, dirs, files in os.walk("."):
 print("meine bilder mit pfad:")
 print(mypics)
 
-col1 = sg.Column(key="planet1", layout=[[sg.Text('la la la', key="text1"), ],
-                                        [sg.Image(filename="saturn.png")],
-                                         [sg.Text("a"), sg.InputText(key="a1", size=(4, 1)),
-                                         sg.Text("e"), sg.InputText(key="e1", size=(4, 1)),
-                                         sg.Text("i"), sg.InputText(key="i1", size=(4, 1))],
-                                        [sg.Text("O"), sg.InputText(key="O1", size=(4, 1)),
-                                         sg.Text("o"), sg.InputText(key="o1", size=(4, 1)),
-                                         sg.Text("t"), sg.InputText(key="t1", size=(4, 1))],
 
 
-                                        ])
+# ------creating layout inside functions so that it can be used several times inside the main loop
+# ------when creating new layouts. it is not allowed to re-use an existing layout without this trick!
+def create_cols(checks):
+    """checks is a list of Booleans"""
+    print("checks:", checks)
+    cols = []
+    for i, planet in enumerate(default_planets.values()):
 
-#[sg.ProgressBar(100, orientation='h', size=(20, 20),
-#                key='progressbar')],
-## [sg.Listbox(default_planets,key="listbox", select_mode=sg.LISTBOX_SELECT_MODE_MULTIPLE,
-##                size=(10, 10)),
-cols = []
-for p in default_planets:
-    print(p.name)
-    cols.append(  sg.Col(layout=[[sg.Button( p.name, tooltip=p.name, image_filename=os.path.join("data",p.name.lower()+".png"), image_subsample=3, border_width=0, button_color=("black" if p.name == "sun" else "yellow",None) )],
-                             [sg.Checkbox(text="",default=True, key="c_" + p.name.lower())]]) )
+        cols.append(  sg.Col(layout=[[sg.Button( planet.name, tooltip=planet.name, image_filename=planet.image, image_subsample=3, border_width=0, button_color=("black" if planet.name == "Sun" else "yellow",None) )],
+                                 [sg.Checkbox(text="",default=checks[i], key="c_" + planet.name.lower())]]) )
+        print("cols created:", cols)
+    return cols
 
-
-layout = [
+def create_layout(checks=allchecks):
+    return [
 
     [sg.Text('Planeten Sandwich Solar System', size=(30, 1))],
-    cols,
-
-    [sg.InputText('This is my text')],
-    [sg.Combo(values=default_planets,key="selectPlanets"),
-     sg.Button("übernehmen")],
+    create_cols(checks),
+    [sg.Button("ok"), sg.Cancel()],
+    [ sg.Button("übernehmen")],
     [sg.Text('Verwendete Planeten:')],
     [sg.Text("nothing", key="usedPlanets", size=(10,10))],
-    [sg.Button("ok"), sg.Cancel()]]
 
-window = sg.Window('sss', layout)
-#progress_bar = window['progressbar']
-i = 1
+    ]
+
+layout = create_layout()
+location = (100,100)
+window = sg.Window('Sandwich1 window', location=location).Layout(layout)
+
+
 while True:
     event, values = window.read()
     if event in [None, "Cancel"]:
         break
-    print(event, values)
-    #print(window["text1"].__dict__)
-    #if event == "next" or event == "bild1":
-    #    window["bild1"].update(image_filename="vortrag.png")
-    if event == "übernehmen":
-        window["usedPlanets"].update(values["selectPlanets"])
-    if event in [p.name for p in default_planets]:
+
+    #print(event, values)
+    # if click on planet icon, toggle planet checkbox
+    if event in planet_names:
         window["c_"+event.lower()].update(not values["c_"+event.lower()])
+    if event == "übernehmen":
+        newchecks = []
+        for planet in default_planets.values():
+            newchecks.append(values["c_"+planet.name.lower()])
+        
+
+        #print("checks=", checks)
+        layout2 =  create_layout(checks=newchecks) # create a COMPLETE NEW LAYOUT by function, do not re-use the old one by variable
+        col_Name = [[sg.Text("Name")]]
+        col_mass = [[sg.Text("Mass")]]
+        col_a = [[sg.Text("a")]]
+        col_e = [[sg.Text("e")]]
+        col_i = [[sg.Text("i")]]
+        for name in planet_names:
+            if values["c_"+name.lower()]:
+                col_Name.append([sg.Text(name)])
+                col_mass.append([sg.Input(default_planets[name].mass)])
+                col_a.append([sg.Input(default_planets[name].a)])
+                col_e.append([sg.Input(default_planets[name].e)])
+                col_i.append([sg.Input(default_planets[name].i)])
+
+
+        layout2.append([sg.Col(layout=col_Name), sg.Col(layout=col_mass), sg.Col(layout=col_a), sg.Col(layout=col_e),
+                       sg.Col(layout=col_i)])
+
+        print(layout2)
+        window1 = sg.Window('Sandwich2 ', location=location).Layout(layout2)
+        window.Close()
+        window = window1
 
 print("Bye")
