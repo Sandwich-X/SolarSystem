@@ -249,6 +249,7 @@ while True:
         window1 = sg.Window('Sandwich2 ', location=loc).Layout(layout2)
         window.Close()
         window = window1
+        recalc_total()
     if event == "Save":
         print(values)
         filename = sg.PopupGetFile("Choose File Name for saving")
@@ -256,12 +257,31 @@ while True:
         with open(filename, 'wb') as handle: # wb: Write Binary
             pickle.dump(values, handle, protocol=0) # pickle.HIGHEST_PROTOCOL)
     if event == "Load":
+        # zuerst checks, asteroids und extra auslesen aus pickle und formular neu bauen
         filename = sg.PopupGetFile("Choose File Name for loading")
         with open(filename, 'rb') as handle: # rb: Read Binary
             pickle_values = pickle.load(handle)
         print("file loaded")
+        #--------
+        for k in pickle_values:
+            if "c_" in k or k == "asteroids" or k == "extra":
+                window[k].update(pickle_values[k])
+                values[k] = pickle_values[k]
+                print("updating from pickle...", k)
+
+
+        layout2 = create_layout2()
+        #print(layout2)
+        window1 = sg.Window('Sandwich2 ', location=loc).Layout(layout2)
+        window.Close()
+        window = window1
+        window.finalize()
+        print("formular ready for loading values from pickle...")
         for k in pickle_values:
             window[k].update(pickle_values[k])
+            values[k] = pickle_values[k]
+            print("second time updating from pickle...", k)
+        recalc_total()
     if "_copy" in event: # copy values from "regular" planet to X-planet
         #print(event, values)
         # event = "X2_copy"
