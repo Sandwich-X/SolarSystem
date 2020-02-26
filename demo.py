@@ -8,10 +8,8 @@ import os
 import pickle
 #import random
 
-
 class Planet():
-    ''' Planet for the Solar system ... '''
-
+    ''' Planet of the Solar system ... '''
     def __init__(self, name, symbol="Symbol", image=None, a=1, e=0, i=0, o=0, O=0, M=0, m=1):
         self.name = name
         self.symbol = symbol
@@ -23,7 +21,6 @@ class Planet():
         self.O = O # Omega
         self.M = M # mean anomaly
         self.m = m # mass
-
     def __repr__(self):
         return self.name
 
@@ -32,13 +29,13 @@ elements = ["a", "e", "i", "o", "O", "M", "m"] # orbital elements names # __dict
 default_planets = {}
 # for planetname in ["Sun", "Mercury", "Venus", "Earth", "Mars", "Jupiter", "Saturn", "Uranus", "Neptune", "Pluto"]:
 pfad = "data"
-default_planets["Sun"]     = Planet("Sun",     image=os.path.join(pfad, "sun.png"),     m=1500.0, a=0)
+default_planets["Sun"]     = Planet("Sun",     image=os.path.join(pfad, "sun.png"),     a=0, m=1.0)
 default_planets["Mercury"] = Planet("Mercury", image=os.path.join(pfad, "mercury.png"), m=2.1,  a=0.4)
-default_planets["Venus"]   = Planet("Venus",   image=os.path.join(pfad, "venus.png"),   m=3.2,  a=0.7)
-default_planets["Earth"]   = Planet("Earth",   image=os.path.join(pfad, "earth.png"),   m=4.3,  a=1)
-default_planets["Mars"]    = Planet("Mars",    image=os.path.join(pfad, "mars.png"),    m=3.4,  a=1.6)
-default_planets["Jupiter"] = Planet("Jupiter", image=os.path.join(pfad, "jupiter.png"), m=14.5, a=5.2)
-default_planets["Saturn"]  = Planet("Saturn",  image=os.path.join(pfad, "saturn.png"),  m=13.6, a=10)
+default_planets["Venus"]   = Planet("Venus",   image=os.path.join(pfad, "venus.png"),   a=0.7233295705, e=0.00679961969640, i=3.39467959, o= 54.717583807, O= 76.6952704868, M=254.371105055, m=2.4478395979668E-06)
+default_planets["Earth"]   = Planet("Earth",   image=os.path.join(pfad, "earth.png"),   a=0.9999997512, e=0.01669866878286, i=0.00075327, o=103.94642037,  O=358.8589930163, M=206.899923805, m=3.0404327387108E-06)
+default_planets["Mars"]    = Planet("Mars",    image=os.path.join(pfad, "mars.png"),    a=1.5237507286, e=0.09335352423353, i=1.85030907, o=286.4617875,   O= 49.5756757952, M=230.813834555, m=3.2271493621539E-07)
+default_planets["Jupiter"] = Planet("Jupiter", image=os.path.join(pfad, "jupiter.png"), a=5.2027870233, e=0.04833790226352, i=1.30463475, o=275.2010177,   O=100.4706642588, M=183.897808735, m=9.5479066214732E-04)
+default_planets["Saturn"]  = Planet("Saturn",  image=os.path.join(pfad, "saturn.png"),  a=9.5300498501, e=0.05334351875332, i=2.48644437, o=339.5198854,   O=113.6685162395, M=238.293160282, m=2.8587764436821E-04)
 default_planets["Uranus"]  = Planet("Uranus",  image=os.path.join(pfad, "uranus.png"),  m=7.7,  a=20)
 default_planets["Neptune"] = Planet("Neptune", image=os.path.join(pfad, "neptune.png"), m=6.8,  a=30)
 default_planets["Pluto"]   = Planet("Pluto",   image=os.path.join(pfad, "pluto.png"),   m=1.1,  a=40)
@@ -64,14 +61,14 @@ print("mypics :",
 def recalc_total():
     """ calculates total number of asteroids """
     sum = 1
-    for e in elements:
+    for elm in elements:
         try:
-            sum *= (float(values["ast_amount_" + e]) + 1 - ivdelta)
+            sum *= (float(values["ast_amount_" + elm]) + 1 - ivdelta)
         except:
             #print("values[ast_amount_" + e, "] :", values["ast_amount_" + e] )
             #print("ivdelta:", ivdelta)
-            print("error calculating amount " + e)
-            window["ast_total"].update("\u03a3: 5^6 ?")
+            print("error calculating amount " + elm)
+            window["ast_total"].update("\u03a3: 5^6 ?") # u03a3 = \N{greek capital letter sigma}
             break
     else:  # schleife lief vollständig durch ohne ein einziges break
         print("recalculating without errors. Result =", sum)
@@ -80,36 +77,54 @@ def recalc_total():
 def create_cols(checks):
     """checks is a list of Booleans"""
     print("checks:", checks)
-    cols = [sg.Col(layout=[[sg.Button("all", tooltip=" select all planets ")],
-                           [sg.Button("none", tooltip=" unselect all planets ")],
-                          ])
-           ]
+    print("sg.COLOR_SYSTEM_DEFAULT :", sg.COLOR_SYSTEM_DEFAULT)
+    #cols = [sg.Col(layout=[[sg.Button("All", tooltip=" select all planets ")],
+    #                       [sg.Button("None", tooltip=" unselect all planets ")]])]
+    cols = []
     for i, planet in enumerate(default_planets.values()):
-        cols.append(sg.Col(layout=[[sg.Button(planet.name, tooltip=planet.name, image_filename=planet.image,
-                                              image_subsample=5, border_width=0,
-                                              button_color=("black" if planet.name == "Sun" else "yellow", None))],
-                                   [sg.Checkbox(text="", default=checks[i], key="c_" + planet.name.lower())]]))
+        cols.append(sg.Col(layout=[[sg.Button("", image_filename=planet.image,
+                                              image_subsample=5, border_width=0, pad=(0,0),
+                                              #button_color=("black" if planet.name == "Sun" else "yellow", sg.theme_background_color())
+					     )],
+                                   [sg.Checkbox(text=planet.name, default=checks[i], key="c_" + planet.name.lower(), tooltip=" "+planet.name+" ")]]))
         #print("cols created:", cols)
     return cols
 
-def create_layout(checks=allchecks, l2 = False): # l2: Layout2 ("übernehmen")
+def create_layout(checks=allchecks, l2 = False): # l2: Layout2 ("Create")
     return [
-        [sg.Text('Planeten Sandwich Solar System', size=(30, 1))],
+        [sg.Text('Solar System N-Body Integrator', size=(30, 1))],
         create_cols(checks),
-        [sg.Text("Anzahl Extra Planeten:"),
-         sg.Spin(values=list(range(10)),initial_value=3,key="extra", size=(3,0)) ,
-         sg.Checkbox(text="Asteroiden",key="asteroids",default=True),
-         sg.Text("    Time [yrs]:"), sg.InputText("1e7", key="time", size=(8,0)),
-         sg.Text("    Delta-t:"), sg.InputText("1e4", key="delta_t", size=(8,0)),
-         sg.Text("    Precission:"),
+        [sg.Text("Number of extra planets:"),
+         sg.Spin(values=list(range(10)), initial_value=3, key="extra", size=(3,0)),
+	 sg.Text(""),
+         sg.Checkbox(text="Asteroids", key="asteroids", default=True, tooltip=" Check for including asteroids (have zero mass) "),
+         sg.Text("    Time [yrs]:", tooltip=" Total integration time "),
+	 sg.InputText("1e7", key="time", size=(8,0)),
+         sg.Text("    Delta-t:"),
+	 sg.InputText("1e4", key="delta_t", size=(8,0), tooltip=" Timestep for intermediate output "),
+         sg.Text("    Precision:"),
          sg.Spin(values=list(range(1,15)),initial_value=11,key="precission", size=(3,0)),
          sg.Text("    Integrator:"),
          sg.Combo(values=["Integrator1","Integrator2","Integrator3"], default_value="Integrator2", key="integrator"),
         ],
-        [sg.Button("übernehmen", disabled = l2), sg.Cancel(), sg.Button("Load"),
-         sg.Button("Save",disabled = not l2) ],
-        [sg.Text('Verwendete Planeten:')],
-            ]
+        [sg.Frame(" Program ",
+	     [[sg.Cancel(tooltip=" Quit program ") ]]),
+         #sg.VerticalSeparator(),
+	 sg.Frame(" Planets ",
+	     [[sg.Button("All",                      tooltip=" Select all planets "),
+	       sg.Button("None",                     tooltip=" Unselect all planets ") ]]),
+         #sg.VerticalSeparator(),
+	 sg.Frame(" Constellation ",
+	     [[sg.Button("Create", disabled = l2,    tooltip=" Create constellation "),
+               sg.Button("Load",                     tooltip=" Load constellation "),
+               sg.Button("Save",  disabled = not l2, tooltip=" Save constellation ") ]]),
+         #sg.VerticalSeparator(),
+	 sg.Frame(" Calculation ",
+             [[sg.Button("Write", disabled = not l2, tooltip=" Write input-file for Fortran-program "),
+               sg.Button("Run",   disabled = not l2, tooltip=" Run Fortran-program ") ]]),
+         ],
+        [sg.Text('')], # "Verwendete Planeten:"
+    ]
         ##sg.Input(key="extra")
         # sg.OK() : Kurzform von sg.Button("ok")
 
@@ -122,16 +137,20 @@ def create_layout2():
     #   do not re-use the old one by variable
     # ??? list.copy() ???
     layout2 = create_layout(checks=newchecks, l2=True)
-    layout2.append([sg.Text("Name", size=(12,1)),
+    sz = (14,1)
+    layout2.append([sg.Text(" Name", background_color="grey", size=(12,1)),
                     sg.Text("", size=(8,1)),
-                    sg.Text("a   [AU]", size=(14,1), tooltip=" semi major axis "),
-                    sg.Text("e"       , size=(14,1), tooltip=" eccentricity "),
-                    sg.Text("i   [°] ", size=(14,1), tooltip=" inclination "),
-                    sg.Text("o   [°] ", size=(14,1), tooltip=" omega "),
-                    sg.Text("O   [°] ", size=(14,1), tooltip=" Omega "),
-                    sg.Text("M   [°] ", size=(14,1), tooltip=" mean anomaly "),
-                    sg.Text("m   [kg | m_Sol]", size=(14, 1), tooltip=" mass "),
+                    sg.Text(" a   [ AU ]",       background_color="grey", size=sz, tooltip=" Semimajor axis "),
+                    sg.Text(" e"       ,         background_color="grey", size=sz, tooltip=" Eccentricity "),
+                    sg.Text(" i   [ ° ] ",      background_color="grey", size=sz, tooltip=" Inclination "),
+                    sg.Text(" \u03c9   [ ° ] ", background_color="grey", size=sz, tooltip=" Argument of periapsis "),
+                    sg.Text(" \u03a9   [ ° ] ", background_color="grey", size=sz, tooltip=" Longitude of the ascending node "),
+                    sg.Text(" M   [ ° ] ",      background_color="grey", size=sz, tooltip=" Mean anomaly "),
+                    sg.Text(" m   [ m_Sol ]",    background_color="grey", size=sz, tooltip=" Mass "),
                     ])
+    # \u03c9 = \N{greek small letter omega}
+    # \u03a9 = \N{greek capital letter omega}
+    # \N{SUBSCRIPT two}
     extra_planets = {}
     for i in range(values["extra"]):
         extra_planets["X"+str(i+1)] = Planet(name="X"+str(i+1))
@@ -145,13 +164,14 @@ def create_layout2():
                 row.append(sg.Combo(values=[n for n in list(default_planets.keys())+list(extra_planets.keys()) if (n != "Sun" and n!=p.name)],
                              default_value = "Earth",
                              key = p.name + "_copy", size=(6,1),
+			     tooltip=" copy from ",
                              enable_events = True))
             else:
                 row.append(sg.Text("",size=(8,1)))
             for nr, elm in enumerate(elements):
                 if p.name == "Sun" and elm != "m":
                     # sun only has a field for mass and no other fields
-                    row.append(sg.Text("",size=(14,1)))
+                    row.append(sg.Text("",size=sz))
                 else:
                     row.append(sg.Input(p.__dict__[elm], size=(14, 1),
                                        key="val_"+elm+"_" + p.name.lower()))  # val=value
@@ -223,7 +243,7 @@ def create_layout2():
 
 layout = create_layout()
 loc = (10, 30)
-window = sg.Window('Sandwich1 window', location=loc).Layout(layout)
+window = sg.Window('N-Body Lie (1)', location=loc).Layout(layout)
 
 ivdelta = 0 # Intervals, not Values for asteroids
 
@@ -231,18 +251,18 @@ while True:
     event, values = window.read()
     if event in [None, "Cancel"]:
         break
-    if event == "all":  # check all planets checkboxes
+    if event == "All":  # check all planets checkboxes
         for p in default_planets.keys():
             window["c_"+p.lower()].update(True)
-    if event == "none": # uncheck all planets checkboxes
+    if event == "None": # uncheck all planets checkboxes
         for p in default_planets.keys():
             window["c_"+p.lower()].update(False)
     if event in list(default_planets.keys()): # if click on planet icon, toggle planet checkbox
         window["c_" + event.lower()].update(not values["c_" + event.lower()])
-    if event == "übernehmen":
+    if event == "Create":
         layout2 = create_layout2()
         #print(layout2)
-        window1 = sg.Window('Sandwich2 ', location=loc).Layout(layout2)
+        window1 = sg.Window('N-Body Lie Integrator', location=loc).Layout(layout2)
         window.Close()
         window = window1
         window.finalize()
@@ -280,7 +300,22 @@ while True:
             values[k] = pickle_values[k]
             print("second time updating from pickle...", k)
         recalc_total()
-    if "_copy" in event: # copy values from "regular" planet to X-planet
+    if event == "Write": # WRITE input-file for Fortran-program
+        print("Button 'Write' pressed")
+        #filename = sg.PopupGetFile("Choose File Name for SAVE-ing")
+        filewrite = sg.PopupGetFile("Choose File Name for WRITE-ing")
+        with open (filewrite, "w") as f:
+            f.write(values["time"] + " "*8 + values["delta_t"] + "\n")
+            f.write(values["integrator"] + "\n")
+            f.write(str(values["precission"]) + "\n")
+            f.write(str(len(allchecks)))
+            f.write(str(values["extra"]) + "\n")
+            f.write("end of testfile\n")
+        continue
+    if event == "Run":   # RUN Fortran-program
+        print("Button 'Run' pressed")
+        continue
+    if "_copy" in event: # COPY values from "regular" planet to X-planet
         sourceplanet = values[event] # zB Jupiter
         targetrow = event[:2].lower() # zB x2
         for elm in elements:
