@@ -67,7 +67,10 @@ def recalc_total():
         try:
             sum *= (float(values["ast_amount_" + e]) + 1 - ivdelta)
         except:
+            #print("values[ast_amount_" + e, "] :", values["ast_amount_" + e] )
+            #print("ivdelta:", ivdelta)
             print("error calculating amount " + e)
+            window["ast_total"].update("\u03a3: 5^6 ?")
             break
     else:  # schleife lief vollständig durch ohne ein einziges break
         print("recalculating without errors. Result =", sum)
@@ -239,6 +242,7 @@ while True:
         window1 = sg.Window('Sandwich2 ', location=loc).Layout(layout2)
         window.Close()
         window = window1
+        window.finalize()
         recalc_total() # damit schon anfangs Zahl existiert
     if event == "Save": # SAVE all parameters
         print(values)
