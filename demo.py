@@ -12,22 +12,23 @@ import pickle
 class Planet():
     ''' Planet for the Solar system ... '''
 
-    def __init__(self, name, symbol="Symbol", image=None, m=1, a=1, e=0, i=0, O=0, o=0, t=0):
+    def __init__(self, name, symbol="Symbol", image=None, a=1, e=0, i=0, o=0, O=0, M=0, m=1):
         self.name = name
         self.symbol = symbol
         self.image = image
-        self.m = m
-        self.a = a
-        self.e = e
-        self.i = i
-        self.O = O
-        self.o = o
-        self.t = t
+        self.a = a # semi major axis
+        self.e = e # eccentricity
+        self.i = i # inclination
+        self.o = o # omega
+        self.O = O # Omega
+        self.M = M # mean anomaly
+        self.m = m # mass
 
     def __repr__(self):
         return self.name
 
-elements = ["m", "a", "e", "i", "O", "o"] # orbital elemnets names # __dict__ ?
+elements = ["a", "e", "i", "o", "O", "M", "m"] # orbital elements names # __dict__ ?
+# or: elements ="aeioOMm"
 default_planets = {}
 # for planetname in ["Sun", "Mercury", "Venus", "Earth", "Mars", "Jupiter", "Saturn", "Uranus", "Neptune", "Pluto"]:
 pfad = "data"
@@ -79,8 +80,8 @@ def recalc_total():
 def create_cols(checks):
     """checks is a list of Booleans"""
     print("checks:", checks)
-    cols = [sg.Col(layout=[[sg.Button("all", tooltip="select all planets")],
-                           [sg.Button("none", tooltip="unselect all planets")],
+    cols = [sg.Col(layout=[[sg.Button("all", tooltip=" select all planets ")],
+                           [sg.Button("none", tooltip=" unselect all planets ")],
                           ])
            ]
     for i, planet in enumerate(default_planets.values()):
@@ -121,14 +122,16 @@ def create_layout2():
     #   do not re-use the old one by variable
     # ??? list.copy() ???
     layout2 = create_layout(checks=newchecks, l2=True)
-    layout2.append([sg.Text("Name", size=(14,1)),
+    layout2.append([sg.Text("Name", size=(12,1)),
                     sg.Text("", size=(8,1)),
-                    sg.Text("m   [kg | m_Sol]", size=(15,1)),
-                    sg.Text("a   [AU]", size=(15,1)),
-                    sg.Text("e"       , size=(15,1)),
-                    sg.Text("i   [°] ", size=(15,1)),
-                    sg.Text("O   [°] ", size=(15,1)),
-                    sg.Text("o   [°] ", size=(15,1))])
+                    sg.Text("a   [AU]", size=(14,1), tooltip=" semi major axis "),
+                    sg.Text("e"       , size=(14,1), tooltip=" eccentricity "),
+                    sg.Text("i   [°] ", size=(14,1), tooltip=" inclination "),
+                    sg.Text("o   [°] ", size=(14,1), tooltip=" omega "),
+                    sg.Text("O   [°] ", size=(14,1), tooltip=" Omega "),
+                    sg.Text("M   [°] ", size=(14,1), tooltip=" mean anomaly "),
+                    sg.Text("m   [kg | m_Sol]", size=(14, 1), tooltip=" mass "),
+                    ])
     extra_planets = {}
     for i in range(values["extra"]):
         extra_planets["X"+str(i+1)] = Planet(name="X"+str(i+1))
@@ -137,7 +140,7 @@ def create_layout2():
             row = []
             # "natural" planet rows get only name as first column,
             # "extra" planet rows get name and a combofield to copy values
-            row.append(sg.Text(p.name, size=(14,0)))
+            row.append(sg.Text(p.name, size=(12,0)))
             if p.name[0] == "X":
                 row.append(sg.Combo(values=[n for n in list(default_planets.keys())+list(extra_planets.keys()) if (n != "Sun" and n!=p.name)],
                              default_value = "Earth",
@@ -146,65 +149,65 @@ def create_layout2():
             else:
                 row.append(sg.Text("",size=(8,1)))
             for nr, elm in enumerate(elements):
-                if p.name == "Sun" and nr > 0:
+                if p.name == "Sun" and elm != "m":
                     # sun only has a field for mass and no other fields
-                    row.append(sg.Text(""))
+                    row.append(sg.Text("",size=(14,1)))
                 else:
-                    row.append(sg.Input(p.__dict__[elm], size=(15, 1),
-                                       key="v_"+elm+"_" + p.name.lower()))  # v=value
+                    row.append(sg.Input(p.__dict__[elm], size=(14, 1),
+                                       key="val_"+elm+"_" + p.name.lower()))  # val=value
             #col_o.append([sg.Input(p.o, size=(15, 1),
-            #                       key="v_o_" + p.name)])
+            #                       key="val_o_" + p.name)])
             layout2.append(row)
     #### asteroiden ------
     if values["asteroids"]:
         #------- astro min
-        row = [sg.Text("Asteroiden minimum:", size=(24,0))]
-        for  elm in elements:
+        row = [sg.Text("Asteroiden minimum:", size=(22,0))]
+        for elm in elements:
             #row.append(sg.InputText(default_text="0", key="ast_min_"+elm, size=(15,0)))
-            row.append(sg.Col(pad=(0, 0),
+            row.append(sg.Col(pad=(0,0),
                           layout=[[sg.InputText(
                               default_text="0",
                               key="ast_min_" + elm,
-                              size=(9, 0), pad=(0, 0),
-                                        enable_events=True),
-                              sg.Button("*", key="ast_min_calc_" + elm, pad=(0, 0))]]))
+                              size=(8,0), pad=(0,0),
+                              enable_events=True),
+                              sg.Button("*", key="ast_min_calc_" + elm, pad=(0,0))]]))
         layout2.append(row)
         #--- asteroids max
-        row = [sg.Text("Asteroiden maximum:", size=(24, 0))]
+        row = [sg.Text("Asteroiden maximum:", size=(22,0))]
         for elm in elements:
             #row.append(sg.InputText(default_text="0", key="ast_max_" + elm, size=(15, 0)))
-            row.append(sg.Col(pad=(0, 0),
+            row.append(sg.Col(pad=(0,0),
                           layout=[[sg.InputText(
                               default_text="10",
                               key="ast_max_" + elm,
-                              size=(9, 0), pad=(0, 0),
-                                        enable_events=True),
-                              sg.Button("*", key="ast_max_calc_" + elm, pad=(0, 0))]]))
+                              size=(8,0), pad=(0,0),
+                              enable_events=True),
+                              sg.Button("*", key="ast_max_calc_" + elm, pad=(0,0))]]))
         layout2.append(row)
         #--- asteroids stepsize
-        row = [sg.Text("Asteroiden stepsize:", size=(24, 0))]
+        row = [sg.Text("Asteroiden stepsize:", size=(22,0))]
         for elm in elements:
             row.append(sg.Col(pad=(0,0),
                               layout=[[sg.InputText(
-                                        default_text="2",
-                                        key="ast_step_"+elm,
-                                        size=(9,0),pad=(0,0),
-                                        enable_events=True),
-                                      sg.Button("*",key="ast_step_calc_"+elm,pad=(0,0))]]))
+                                    default_text="2",
+                                    key="ast_step_"+elm,
+                                    size=(8,0),pad=(0,0),
+                                    enable_events=True),
+                                    sg.Button("*",key="ast_step_calc_"+elm,pad=(0,0))]]))
         layout2.append(row)
         #--- asteroids amount
-        row = [sg.Text("Ast. amount:", size=(10, 0)),
-               sg.Radio("I",tooltip="Intervals",group_id="iv",key="iv_i",enable_events=True,default=True),
-               sg.Radio("V",tooltip="Values",   group_id="iv",key="iv_v",enable_events=True,default=False),
+        row = [sg.Text("Ast. amount:", size=(11, 0)),
+               sg.Radio("I",tooltip=" Intervals ",group_id="iv",key="iv_i",enable_events=True,default=True,pad=(0,0)),
+               sg.Radio("V",tooltip=" Values ",   group_id="iv",key="iv_v",enable_events=True,default=False,pad=(0,0)),
                ]
         for elm in elements:
             row.append(sg.Col(pad=(0,0),
                               layout=[[sg.InputText(
-                                        default_text="5",
-                                        key="ast_amount_"+elm,
-                                        size=(9,0),pad=(0,0),
-                                        enable_events=True),
-                                      sg.Button("*",key="ast_amount_calc_"+elm,pad=(0,0))]]))
+                                    default_text="5",
+                                    key="ast_amount_"+elm,
+                                    size=(8,0),pad=(0,0),
+                                    enable_events=True),
+                                    sg.Button("*",key="ast_amount_calc_"+elm,pad=(0,0))]]))
         row.append(sg.Text(" ? ",key="ast_total",size=(5,0)))
         layout2.append(row)
         #row.append(sg.Column(layout=[[
@@ -244,6 +247,7 @@ while True:
         window = window1
         window.finalize()
         recalc_total() # damit schon anfangs Zahl existiert
+        # Problem: dict values ist noch nicht befüllt!
     if event == "Save": # SAVE all parameters
         print(values)
         filename = sg.PopupGetFile("Choose File Name for SAVE-ing")
@@ -281,9 +285,9 @@ while True:
         targetrow = event[:2].lower() # zB x2
         for elm in elements:
             if sourceplanet[0] == "X":
-                window["v_" + elm + "_" + targetrow].update(values["v_"+elm+"_"+sourceplanet.lower()])
+                window["val_" + elm + "_" + targetrow].update(values["val_"+elm+"_"+sourceplanet.lower()])
             else:
-                 window["v_"+elm+"_"+targetrow].update(default_planets[sourceplanet].__dict__[elm])
+                 window["val_"+elm+"_"+targetrow].update(default_planets[sourceplanet].__dict__[elm])
     #---- asteroiden - klumpert ------
     if event == "iv_i":
         if ivdelta == 0:
