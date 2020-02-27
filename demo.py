@@ -6,6 +6,7 @@ GUI for creating parameter-file for Solar-System simulating program
 import PySimpleGUI as sg
 import os
 import pickle
+import numpy as np
 #import random
 
 class Planet():
@@ -58,6 +59,8 @@ print("mypics :",
 # --- creating layout inside functions so that it can be used several times
 #     inside the main loop when creating new layouts. it is not allowed to
 #     re-use an existing layout without this trick!
+
+
 
 def recalc_total():
     """ calculates total number of asteroids """
@@ -313,7 +316,6 @@ while True:
             f.write(str(values["extra"]) + "\n")
             f.write("        ?\n   ?\n")
             f.write("   0.0                0\n")
-#-----
             for p in list(default_planets.values()) + list(extra_planets.values()):
                 if not values["c_" + p.name] and p.name[0] != "X":
                     continue # planet not check-selected and not an extra planet
@@ -326,14 +328,36 @@ while True:
                     else:
                         f.write(values["val_" + elm + "_" + p.name] + " ")
                 f.write("\n")
-                    #    row.append(sg.Text("", size=sz))
-                    #else:
-                    #    row.append(sg.Input(p.__dict__[elm], size=(14, 1),
-                    #                        key="val_" + elm + "_" + p.name))  # val=value
-                # col_o.append([sg.Input(p.o, size=(15, 1),
-                #                       key="val_o_" + p.name)])
-                    #layout2.append(row)
-            f.write("end of testfile\n")
+            for xa in np.arange(float(values["ast_min_a"]),float(values["ast_max_a"])+float(values["ast_step_a"]),float(values["ast_step_a"])):
+                print("xa :", xa)
+                for xe in np.arange(float(values["ast_min_e"]),float(values["ast_max_e"])+float(values["ast_step_e"]),float(values["ast_step_e"])):
+                    print("  xe :", xe)
+                    for xi in np.arange(float(values["ast_min_i"]), float(values["ast_max_i"]) + float(values["ast_step_i"]),
+                                        float(values["ast_step_i"])):
+                        print("    xi :", xi)
+                        for xo in np.arange(float(values["ast_min_o"]), float(values["ast_max_o"]) + float(values["ast_step_o"]),
+                                            float(values["ast_step_o"])):
+                            print("      xo :", xo)
+                            for xO in np.arange(float(values["ast_min_O"]), float(values["ast_max_O"]) + float(values["ast_step_O"]),
+                                                float(values["ast_step_O"])):
+                                print("        xO :", xO)
+                                for xM in np.arange(float(values["ast_min_M"]), float(values["ast_max_M"]) + float(values["ast_step_M"]),
+                                                    float(values["ast_step_M"])):
+                                    print("          xM :", xM)
+                                    f.write(str(xa) + " ")
+                                    f.write(str(xe) + " ")
+                                    f.write(str(xi) + " ")
+                                    f.write(str(xo) + " ")
+                                    f.write(str(xO) + " ")
+                                    f.write(str(xM) + " ")
+                                    f.write("0.0\n")
+                                #</for xM>
+                            # </for xO>
+                        # </for xo>
+                    # </for xi>
+                # </for xe>
+            # </for xa>
+            f.write("# a_[AU]     eccentricity     inclinat.  omega         Omega          mean_anomaly  mass_[sun]\n")
         #</with open>
         continue
     if event == "Run":   # RUN Fortran-program
