@@ -27,6 +27,7 @@ class Planet():
 elements = ["a", "e", "i", "o", "O", "M", "m"] # orbital elements names # __dict__ ?
 # or: elements ="aeioOMm"
 default_planets = {}
+extra_planets = {}
 # for planetname in ["Sun", "Mercury", "Venus", "Earth", "Mars", "Jupiter", "Saturn", "Uranus", "Neptune", "Pluto"]:
 pfad = "data"
 default_planets["Sun"]     = Planet("Sun",     image=os.path.join(pfad, "sun.png"),     a=0, m=1.0)
@@ -77,7 +78,7 @@ def recalc_total():
 def create_cols(checks):
     """checks is a list of Booleans"""
     print("checks:", checks)
-    print("sg.COLOR_SYSTEM_DEFAULT :", sg.COLOR_SYSTEM_DEFAULT)
+    #print("sg.COLOR_SYSTEM_DEFAULT :", sg.COLOR_SYSTEM_DEFAULT)
     #cols = [sg.Col(layout=[[sg.Button("All", tooltip=" select all planets ")],
     #                       [sg.Button("None", tooltip=" unselect all planets ")]])]
     cols = []
@@ -86,7 +87,7 @@ def create_cols(checks):
                                               image_subsample=5, border_width=0, pad=(0,0),
                                               #button_color=("black" if planet.name == "Sun" else "yellow", sg.theme_background_color())
 					     )],
-                                   [sg.Checkbox(text=planet.name, default=checks[i], key="c_" + planet.name.lower(), tooltip=" "+planet.name+" ")]]))
+                                   [sg.Checkbox(text=planet.name, default=checks[i], key="c_" + planet.name, tooltip=" "+planet.name+" ")]]))
         #print("cols created:", cols)
     return cols
 
@@ -96,12 +97,12 @@ def create_layout(checks=allchecks, l2 = False): # l2: Layout2 ("Create")
         create_cols(checks),
         [sg.Text("Number of extra planets:"),
          sg.Spin(values=list(range(10)), initial_value=3, key="extra", size=(3,0)),
-	 sg.Text(""),
+	     sg.Text(""),
          sg.Checkbox(text="Asteroids", key="asteroids", default=True, tooltip=" Check for including asteroids (have zero mass) "),
          sg.Text("    Time [yrs]:", tooltip=" Total integration time "),
-	 sg.InputText("1e7", key="time", size=(8,0)),
+	     sg.InputText("1e7", key="time", size=(8,0)),
          sg.Text("    Delta-t:"),
-	 sg.InputText("1e4", key="delta_t", size=(8,0), tooltip=" Timestep for intermediate output "),
+	     sg.InputText("1e4", key="delta_t", size=(8,0), tooltip=" Timestep for intermediate output "),
          sg.Text("    Precision:"),
          sg.Spin(values=list(range(1,15)),initial_value=11,key="precission", size=(3,0)),
          sg.Text("    Integrator:"),
@@ -110,16 +111,16 @@ def create_layout(checks=allchecks, l2 = False): # l2: Layout2 ("Create")
         [sg.Frame(" Program ",
 	     [[sg.Cancel(tooltip=" Quit program ") ]]),
          #sg.VerticalSeparator(),
-	 sg.Frame(" Planets ",
+	     sg.Frame(" Planets ",
 	     [[sg.Button("All",                      tooltip=" Select all planets "),
 	       sg.Button("None",                     tooltip=" Unselect all planets ") ]]),
          #sg.VerticalSeparator(),
-	 sg.Frame(" Constellation ",
+	     sg.Frame(" Constellation ",
 	     [[sg.Button("Create", disabled = l2,    tooltip=" Create constellation "),
                sg.Button("Load",                     tooltip=" Load constellation "),
                sg.Button("Save",  disabled = not l2, tooltip=" Save constellation ") ]]),
          #sg.VerticalSeparator(),
-	 sg.Frame(" Calculation ",
+	     sg.Frame(" Calculation ",
              [[sg.Button("Write", disabled = not l2, tooltip=" Write input-file for Fortran-program "),
                sg.Button("Run",   disabled = not l2, tooltip=" Run Fortran-program ") ]]),
          ],
@@ -131,7 +132,7 @@ def create_layout(checks=allchecks, l2 = False): # l2: Layout2 ("Create")
 def create_layout2():
     newchecks = []
     for planet in default_planets.values():
-        newchecks.append(values["c_" + planet.name.lower()])
+        newchecks.append(values["c_" + planet.name])
     # print("checks =", checks)
     # create a COMPLETE NEW LAYOUT by function,
     #   do not re-use the old one by variable
@@ -155,7 +156,7 @@ def create_layout2():
     for i in range(values["extra"]):
         extra_planets["X"+str(i+1)] = Planet(name="X"+str(i+1))
     for p in list(default_planets.values())+list(extra_planets.values()):
-        if p.name[0] == "X" or values["c_" + p.name.lower()]:
+        if p.name[0] == "X" or values["c_" + p.name]:
             row = []
             # "natural" planet rows get only name as first column,
             # "extra" planet rows get name and a combofield to copy values
@@ -168,13 +169,13 @@ def create_layout2():
                              enable_events = True))
             else:
                 row.append(sg.Text("",size=(8,1)))
-            for nr, elm in enumerate(elements):
+            for elm in elements:
                 if p.name == "Sun" and elm != "m":
                     # sun only has a field for mass and no other fields
                     row.append(sg.Text("",size=sz))
                 else:
                     row.append(sg.Input(p.__dict__[elm], size=(14, 1),
-                                       key="val_"+elm+"_" + p.name.lower()))  # val=value
+                                       key = "val_" + elm + "_" + p.name))  # val=value
             #col_o.append([sg.Input(p.o, size=(15, 1),
             #                       key="val_o_" + p.name)])
             layout2.append(row)
@@ -253,12 +254,12 @@ while True:
         break
     if event == "All":  # check all planets checkboxes
         for p in default_planets.keys():
-            window["c_"+p.lower()].update(True)
+            window["c_"+p].update(True)
     if event == "None": # uncheck all planets checkboxes
         for p in default_planets.keys():
-            window["c_"+p.lower()].update(False)
+            window["c_"+p].update(False)
     if event in list(default_planets.keys()): # if click on planet icon, toggle planet checkbox
-        window["c_" + event.lower()].update(not values["c_" + event.lower()])
+        window["c_" + event].update(not values["c_" + event])
     if event == "Create":
         layout2 = create_layout2()
         #print(layout2)
@@ -308,19 +309,42 @@ while True:
             f.write(values["time"] + " "*8 + values["delta_t"] + "\n")
             f.write(values["integrator"] + "\n")
             f.write(str(values["precission"]) + "\n")
-            f.write(str(len(allchecks)))
+            f.write(str(len(allchecks)) + " "*8)
             f.write(str(values["extra"]) + "\n")
+            f.write("        ?\n   ?\n")
+            f.write("   0.0                0\n")
+#-----
+            for p in list(default_planets.values()) + list(extra_planets.values()):
+                if not values["c_" + p.name] and p.name[0] != "X":
+                    continue # planet not check-selected and not an extra planet
+                for elm in elements:
+                    print("p.name = '" + p.name + "'")
+                    print("elm    = '" + elm    + "'")
+                    if p.name == "Sun" and elm != "m":
+                        # sun has only mass field/value
+                        f.write("0.0          ")
+                    else:
+                        f.write(values["val_" + elm + "_" + p.name] + " ")
+                f.write("\n")
+                    #    row.append(sg.Text("", size=sz))
+                    #else:
+                    #    row.append(sg.Input(p.__dict__[elm], size=(14, 1),
+                    #                        key="val_" + elm + "_" + p.name))  # val=value
+                # col_o.append([sg.Input(p.o, size=(15, 1),
+                #                       key="val_o_" + p.name)])
+                    #layout2.append(row)
             f.write("end of testfile\n")
+        #</with open>
         continue
     if event == "Run":   # RUN Fortran-program
         print("Button 'Run' pressed")
         continue
     if "_copy" in event: # COPY values from "regular" planet to X-planet
         sourceplanet = values[event] # zB Jupiter
-        targetrow = event[:2].lower() # zB x2
+        targetrow = event[:2] # zB x2
         for elm in elements:
             if sourceplanet[0] == "X":
-                window["val_" + elm + "_" + targetrow].update(values["val_"+elm+"_"+sourceplanet.lower()])
+                window["val_" + elm + "_" + targetrow].update(values["val_"+elm+"_"+sourceplanet])
             else:
                  window["val_"+elm+"_"+targetrow].update(default_planets[sourceplanet].__dict__[elm])
     #---- asteroiden - klumpert ------
