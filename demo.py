@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 '''
-GUI for creating parameter-file for Solar-System simulating program
+GUI for creating input-file for Solar-System simulating program (N-body)
 '''
 
 import PySimpleGUI as sg
@@ -26,21 +26,30 @@ class Planet():
         return self.name
 
 elements = ["a", "e", "i", "o", "O", "M", "m"] # orbital elements names # __dict__ ?
+formats = {"a" : "{:13.10f} ",
+           "e" : "{:16.14f} ",
+           "i" : "{:12.9f} ", # i<100.0 !
+           "o" : "{:13.9f} ",
+           "O" : "{:14.10f} ",
+           "M" : "{:14.10f} ",
+           "m" : "{:19.13e}",
+           }
+
 # or: elements ="aeioOMm"
 default_planets = {}
 extra_planets = {}
 # for planetname in ["Sun", "Mercury", "Venus", "Earth", "Mars", "Jupiter", "Saturn", "Uranus", "Neptune", "Pluto"]:
 pfad = "data"
 default_planets["Sun"]     = Planet("Sun",     image=os.path.join(pfad, "sun.png"),     a=0, m=1.0)
-default_planets["Mercury"] = Planet("Mercury", image=os.path.join(pfad, "mercury.png"), m=2.1,  a=0.4)
+default_planets["Mercury"] = Planet("Mercury", image=os.path.join(pfad, "mercury.png"), a=0.3870984049, e=0.20562759001856, i=7.00541320, o= 29.103337372, O= 48.3386427671, M=300.323037377, m=1.6601367952719E-07)
 default_planets["Venus"]   = Planet("Venus",   image=os.path.join(pfad, "venus.png"),   a=0.7233295705, e=0.00679961969640, i=3.39467959, o= 54.717583807, O= 76.6952704868, M=254.371105055, m=2.4478395979668E-06)
 default_planets["Earth"]   = Planet("Earth",   image=os.path.join(pfad, "earth.png"),   a=0.9999997512, e=0.01669866878286, i=0.00075327, o=103.94642037,  O=358.8589930163, M=206.899923805, m=3.0404327387108E-06)
 default_planets["Mars"]    = Planet("Mars",    image=os.path.join(pfad, "mars.png"),    a=1.5237507286, e=0.09335352423353, i=1.85030907, o=286.4617875,   O= 49.5756757952, M=230.813834555, m=3.2271493621539E-07)
 default_planets["Jupiter"] = Planet("Jupiter", image=os.path.join(pfad, "jupiter.png"), a=5.2027870233, e=0.04833790226352, i=1.30463475, o=275.2010177,   O=100.4706642588, M=183.897808735, m=9.5479066214732E-04)
 default_planets["Saturn"]  = Planet("Saturn",  image=os.path.join(pfad, "saturn.png"),  a=9.5300498501, e=0.05334351875332, i=2.48644437, o=339.5198854,   O=113.6685162395, M=238.293160282, m=2.8587764436821E-04)
-default_planets["Uranus"]  = Planet("Uranus",  image=os.path.join(pfad, "uranus.png"),  m=7.7,  a=20)
-default_planets["Neptune"] = Planet("Neptune", image=os.path.join(pfad, "neptune.png"), m=6.8,  a=30)
-default_planets["Pluto"]   = Planet("Pluto",   image=os.path.join(pfad, "pluto.png"),   m=1.1,  a=40)
+default_planets["Uranus"]  = Planet("Uranus",  image=os.path.join(pfad, "uranus.png"),  a=19.235307728, e=0.04732287311718, i=0.77246832, o= 99.865744927, O= 74.0328700914, M=111.687917146, m=4.3554006968641E-05)
+default_planets["Neptune"] = Planet("Neptune", image=os.path.join(pfad, "neptune.png"), a=30.140843059, e=0.00624892789382, i=1.77180286, o=261.73961138,  O=131.755959637 , M=257.158043637, m=5.1775913844879E-05)
+default_planets["Pluto"]   = Planet("Pluto",   image=os.path.join(pfad, "pluto.png"),   a=39.3101258977112664, e=0.2549485836749273, i=17.1355669386750655, o=113.7848500826763853, O=110.3143490241281341, M=5.4416930098650553, m=6.553E-09)
 
 print("default_planets.keys() :",
        default_planets.keys())
@@ -59,8 +68,6 @@ print("mypics :",
 # --- creating layout inside functions so that it can be used several times
 #     inside the main loop when creating new layouts. it is not allowed to
 #     re-use an existing layout without this trick!
-
-
 
 def recalc_total():
     """ calculates total number of asteroids """
@@ -86,11 +93,19 @@ def create_cols(checks):
     #                       [sg.Button("None", tooltip=" unselect all planets ")]])]
     cols = []
     for i, planet in enumerate(default_planets.values()):
-        cols.append(sg.Col(layout=[[sg.Button("", image_filename=planet.image,
-                                              image_subsample=5, border_width=0, pad=(0,0),
-                                              #button_color=("black" if planet.name == "Sun" else "yellow", sg.theme_background_color())
-					     )],
-                                   [sg.Checkbox(text=planet.name, default=checks[i], key="c_" + planet.name, tooltip=" "+planet.name+" ")]]))
+        cols.append(sg.Col(layout=[
+            [sg.Button("", image_filename = planet.image,
+                           image_subsample = 5, border_width = 0,
+                           key = "img_" + planet.name,
+                           pad = (0,0),
+                           #button_color=("black" if planet.name == "Sun" else "yellow", sg.theme_background_color())
+                      )],
+            [sg.Checkbox(text=planet.name+"  ", default=checks[i],
+                         key = "chk_" + planet.name,
+                         tooltip = " " + planet.name + " ",
+                         pad = (0,0),
+                        )]], # end of layout
+            element_justification="center", pad=(0,5))) # size & pad in pixels
         #print("cols created:", cols)
     return cols
 
@@ -107,7 +122,7 @@ def create_layout(checks=allchecks, l2 = False): # l2: Layout2 ("Create")
          sg.Text("    Delta-t:"),
 	     sg.InputText("1e4", key="delta_t", size=(8,0), tooltip=" Timestep for intermediate output "),
          sg.Text("    Precision:"),
-         sg.Spin(values=list(range(1,15)),initial_value=11,key="precission", size=(3,0)),
+         sg.Spin(values=list(range(1,15)),initial_value=-13,key="logeps", size=(3,0)),
          sg.Text("    Integrator:"),
          sg.Combo(values=["Integrator1","Integrator2","Integrator3"], default_value="Integrator2", key="integrator"),
         ],
@@ -135,7 +150,7 @@ def create_layout(checks=allchecks, l2 = False): # l2: Layout2 ("Create")
 def create_layout2():
     newchecks = []
     for planet in default_planets.values():
-        newchecks.append(values["c_" + planet.name])
+        newchecks.append(values["chk_" + planet.name])
     # print("checks =", checks)
     # create a COMPLETE NEW LAYOUT by function,
     #   do not re-use the old one by variable
@@ -159,7 +174,7 @@ def create_layout2():
     for i in range(values["extra"]):
         extra_planets["X"+str(i+1)] = Planet(name="X"+str(i+1))
     for p in list(default_planets.values())+list(extra_planets.values()):
-        if p.name[0] == "X" or values["c_" + p.name]:
+        if p.name[0] == "X" or values["chk_" + p.name]:
             row = []
             # "natural" planet rows get only name as first column,
             # "extra" planet rows get name and a combofield to copy values
@@ -245,6 +260,12 @@ def create_layout2():
     # end for
     return layout2
 
+def create_range(elm):
+    return np.arange(float(values["ast_min_"+elm]),
+                     float(values["ast_max_"+elm])
+                    +float(values["ast_step_"+elm]),
+                     float(values["ast_step_"+elm]))
+
 layout = create_layout()
 loc = (10, 30)
 window = sg.Window('N-Body Lie (1)', location=loc).Layout(layout)
@@ -257,21 +278,24 @@ while True:
         break
     if event == "All":  # check all planets checkboxes
         for p in default_planets.keys():
-            window["c_"+p].update(True)
+            window["chk_"+p].update(True)
     if event == "None": # uncheck all planets checkboxes
         for p in default_planets.keys():
-            window["c_"+p].update(False)
-    if event in list(default_planets.keys()): # if click on planet icon, toggle planet checkbox
-        window["c_" + event].update(not values["c_" + event])
+            window["chk_"+p].update(False)
+    if "img_" in event: # in list(default_planets.keys()): # if click on planet icon, toggle planet checkbox
+        new_key = event.replace("img","chk")
+        window[new_key].update(not values[new_key])
     if event == "Create":
+        win_tmp = sg.Window("Please wait ...",
+                            [[sg.T("... until constellation is created!")]]).finalize()
+        window.Close()
         layout2 = create_layout2()
         #print(layout2)
-        window1 = sg.Window('N-Body Lie Integrator', location=loc).Layout(layout2)
-        window.Close()
-        window = window1
-        window.finalize()
+        window = sg.Window('N-Body Lie Integrator', location=loc).Layout(layout2).finalize()
+        # finalize(), damit recalcen kann
         recalc_total() # damit schon anfangs Zahl existiert
         # Problem: dict values ist noch nicht befüllt!
+        win_tmp.close()
     if event == "Save": # SAVE all parameters
         print(values)
         filename = sg.PopupGetFile("Choose File Name for SAVE-ing")
@@ -287,7 +311,7 @@ while True:
         print("file loaded")
         #--------
         for k in pickle_values: # k = key
-            if "c_" in k or k == "asteroids" or k == "extra":
+            if "chk_" in k or k == "asteroids" or k == "extra":
                 window[k].update(pickle_values[k])
                 values[k] = pickle_values[k]
                 print("updating from pickle...", k)
@@ -309,15 +333,17 @@ while True:
         #filename = sg.PopupGetFile("Choose File Name for SAVE-ing")
         filewrite = sg.PopupGetFile("Choose File Name for WRITE-ing")
         with open (filewrite, "w") as f:
-            f.write(values["time"] + " "*8 + values["delta_t"] + "\n")
-            f.write(values["integrator"] + "\n")
-            f.write(str(values["precission"]) + "\n")
-            f.write(str(len(allchecks)) + " "*8)
-            f.write(str(values["extra"]) + "\n")
-            f.write("        ?\n   ?\n")
-            f.write("   0.0                0\n")
+            f.write("{:0g} {:0g}\n".format(float(values["time"]),float(values["delta_t"])))
+            f.write(" 0        /INI [0=EL,1=HEL,2=BAR] *** TO DO ***\n")
+            f.write(" 12       /N [Anzahl der Lie-Terme] *** TO DO ***\n")
+            f.write("{:2g} {:2g}     /N_masse,N_masselos\n".format(
+                    len(allchecks), int(values["extra"])))
+            f.write("{:3g}       /logeps\n".format(float(format(values["logeps"]))))
+            f.write("1D-11     /SWMINI = StepWidthMINImum *** TO DO ***\n")
+            f.write("0d0  0    /swsum(t0[tage]), nstep *** TO DO ***\n")
+            f.write(values["integrator"] + "\n\n")
             for p in list(default_planets.values()) + list(extra_planets.values()):
-                if not values["c_" + p.name] and p.name[0] != "X":
+                if not values["chk_" + p.name] and p.name[0] != "X":
                     continue # planet not check-selected and not an extra planet
                 for elm in elements:
                     print("p.name = '" + p.name + "'")
@@ -326,38 +352,36 @@ while True:
                         # sun has only mass field/value
                         f.write("0.0          ")
                     else:
-                        f.write(values["val_" + elm + "_" + p.name] + " ")
-                f.write("\n")
-            for xa in np.arange(float(values["ast_min_a"]),float(values["ast_max_a"])+float(values["ast_step_a"]),float(values["ast_step_a"])):
-                print("xa :", xa)
-                for xe in np.arange(float(values["ast_min_e"]),float(values["ast_max_e"])+float(values["ast_step_e"]),float(values["ast_step_e"])):
-                    print("  xe :", xe)
-                    for xi in np.arange(float(values["ast_min_i"]), float(values["ast_max_i"]) + float(values["ast_step_i"]),
-                                        float(values["ast_step_i"])):
-                        print("    xi :", xi)
-                        for xo in np.arange(float(values["ast_min_o"]), float(values["ast_max_o"]) + float(values["ast_step_o"]),
-                                            float(values["ast_step_o"])):
-                            print("      xo :", xo)
-                            for xO in np.arange(float(values["ast_min_O"]), float(values["ast_max_O"]) + float(values["ast_step_O"]),
-                                                float(values["ast_step_O"])):
-                                print("        xO :", xO)
-                                for xM in np.arange(float(values["ast_min_M"]), float(values["ast_max_M"]) + float(values["ast_step_M"]),
-                                                    float(values["ast_step_M"])):
-                                    print("          xM :", xM)
-                                    f.write(str(xa) + " ")
-                                    f.write(str(xe) + " ")
-                                    f.write(str(xi) + " ")
-                                    f.write(str(xo) + " ")
-                                    f.write(str(xO) + " ")
-                                    f.write(str(xM) + " ")
-                                    f.write("0.0\n")
+                        f.write(formats[elm].format(float(values["val_" + elm + "_" + p.name] + " ")))
+                f.write("\n") # newline after each planet
+            f.write("\n")  # newline after all planets
+            #dbg = False
+            for xa in create_range("a"):
+                #print("xa :", xa)
+                for xe in create_range("e"):
+                    #print("  xe :", xe)
+                    for xi in create_range("i"):
+                        #print("    xi :", xi)
+                        for xo in create_range("o"):
+                            #print("      xo :", xo)
+                            for xO in create_range("O"):
+                                #print("        xO :", xO)
+                                for xM in create_range("M"):
+                                    #print("          xM :", xM)
+                                    f.write(formats["a"].format(xa)) #f.write(str(xa) + " ")
+                                    f.write(formats["e"].format(xe)) #f.write(str(xe) + " ")
+                                    f.write(formats["i"].format(xi)) #f.write(str(xi) + " ")
+                                    f.write(formats["o"].format(xo)) #f.write(str(xo) + " ")
+                                    f.write(formats["O"].format(xO)) #f.write(str(xO) + " ")
+                                    f.write(formats["M"].format(xM)) #f.write(str(xM) + " ")
+                                    f.write("0.0\n") # mass of asteroid
                                 #</for xM>
                             # </for xO>
                         # </for xo>
                     # </for xi>
                 # </for xe>
             # </for xa>
-            f.write("# a_[AU]     eccentricity     inclinat.  omega         Omega          mean_anomaly  mass_[sun]\n")
+            f.write("# a_[AU]        eccentricity      inclinat.     omega         Omega          mean_anom.   mass_[sun]\n")
         #</with open>
         continue
     if event == "Run":   # RUN Fortran-program
@@ -373,7 +397,7 @@ while True:
                  window["val_"+elm+"_"+targetrow].update(default_planets[sourceplanet].__dict__[elm])
     #---- asteroiden - klumpert ------
     if event == "iv_i":
-        if ivdelta == 0:
+        if ivdelta == 0: # nothing to do
             continue # while-loop
         ivdelta = 0
         # recalc: subtract 1 from asteroids-amounts
@@ -381,7 +405,7 @@ while True:
             window["ast_amount_" + elm].update(float(values["ast_amount_" + elm]) -1 )
         print("iv_i geklickt")
     elif event == "iv_v":
-        if ivdelta == 1:
+        if ivdelta == 1: # nothing to do
             continue # while-loop
         ivdelta = 1
         # recalc: add 1 to asteroids-amounts
@@ -391,7 +415,7 @@ while True:
     if "ast_" in event:
         print("Asteroiden-Zeux, event:", event)
         elm = event[-1]
-        what = event[4:7] # Buchstaben 4, 5, 6; 7 ist nicht mehr dabei!
+        what = event[4:7] # Buchstaben 4, 5 und 6; 7 ist nicht mehr dabei!
         if what == "ste":
             what = "step"
         elif what == "amo":
