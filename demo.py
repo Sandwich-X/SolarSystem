@@ -26,14 +26,17 @@ class Planet():
         return self.name
 
 elements = ["a", "e", "i", "o", "O", "M", "m"] # orbital elements names # __dict__ ?
-formats = {"a" : "{:13.10f} ",
-           "e" : "{:16.14f} ",
-           "i" : "{:12.9f} ", # i<100.0 !
-           "o" : "{:13.9f} ",
-           "O" : "{:14.10f} ",
-           "M" : "{:14.10f} ",
-           "m" : "{:19.13e}",
-           }
+x_elm = {}
+for e in elements:
+    x_elm[e] = 0.0
+form_string = {"a" : "{:13.10f} ",
+               "e" : "{:16.14f} ",
+               "i" : "{:12.9f} ", # i<100.0 !
+               "o" : "{:13.9f} ",
+               "O" : "{:14.10f} ",
+               "M" : "{:14.10f} ",
+               "m" : "{:19.13e}",
+              }
 
 # or: elements ="aeioOMm"
 default_planets = {}
@@ -110,6 +113,10 @@ def create_cols(checks):
     return cols
 
 def create_layout(checks=allchecks, l2 = False): # l2: Layout2 ("Create")
+    # zwex Test
+    tab1_layout = [[sg.T('This is inside tab 1')]]
+    tab2_layout = [[sg.T('This is inside tab 2')],
+                   [sg.In(key='in')]]
     return [
         [sg.Text('Solar System N-Body Integrator', size=(30, 1))],
         create_cols(checks),
@@ -127,14 +134,14 @@ def create_layout(checks=allchecks, l2 = False): # l2: Layout2 ("Create")
          sg.Combo(values=["Integrator1","Integrator2","Integrator3"], default_value="Integrator2", key="integrator"),
         ],
         [sg.Frame(" Program ",
-	     [[sg.Cancel(tooltip=" Quit program ") ]]),
+	         [[sg.Cancel(tooltip=" Quit program ") ]]),
          #sg.VerticalSeparator(),
 	     sg.Frame(" Planets ",
-	     [[sg.Button("All",                      tooltip=" Select all planets "),
-	       sg.Button("None",                     tooltip=" Unselect all planets ") ]]),
+	         [[sg.Button("All",                      tooltip=" Select all planets "),
+	           sg.Button("None",                     tooltip=" Unselect all planets ") ]]),
          #sg.VerticalSeparator(),
 	     sg.Frame(" Constellation ",
-	     [[sg.Button("Create", disabled = l2,    tooltip=" Create constellation "),
+	         [[sg.Button("Create", disabled = l2,    tooltip=" Create constellation "),
                sg.Button("Load",                     tooltip=" Load constellation "),
                sg.Button("Save",  disabled = not l2, tooltip=" Save constellation ") ]]),
          #sg.VerticalSeparator(),
@@ -143,9 +150,9 @@ def create_layout(checks=allchecks, l2 = False): # l2: Layout2 ("Create")
                sg.Button("Run",   disabled = not l2, tooltip=" Run Fortran-program ") ]]),
          ],
         [sg.Text('')], # "Verwendete Planeten:"
+        [sg.TabGroup([[sg.Tab('Tab 1', tab1_layout),
+                       sg.Tab('Tab 2', tab2_layout)]])],
     ]
-        ##sg.Input(key="extra")
-        # sg.OK() : Kurzform von sg.Button("ok")
 
 def create_layout2():
     newchecks = []
@@ -352,28 +359,24 @@ while True:
                         # sun has only mass field/value
                         f.write("0.0          ")
                     else:
-                        f.write(formats[elm].format(float(values["val_" + elm + "_" + p.name] + " ")))
+                        f.write(form_string[elm].format(float(values["val_" + elm + "_" + p.name] + " ")))
                 f.write("\n") # newline after each planet
             f.write("\n")  # newline after all planets
             #dbg = False
-            for xa in create_range("a"):
+            for x_elm["a"] in create_range("a"):
                 #print("xa :", xa)
-                for xe in create_range("e"):
+                for x_elm["e"] in create_range("e"):
                     #print("  xe :", xe)
-                    for xi in create_range("i"):
+                    for x_elm["i"] in create_range("i"):
                         #print("    xi :", xi)
-                        for xo in create_range("o"):
+                        for x_elm["o"] in create_range("o"):
                             #print("      xo :", xo)
-                            for xO in create_range("O"):
+                            for x_elm["O"] in create_range("O"):
                                 #print("        xO :", xO)
-                                for xM in create_range("M"):
+                                for x_elm["M"] in create_range("M"):
                                     #print("          xM :", xM)
-                                    f.write(formats["a"].format(xa)) #f.write(str(xa) + " ")
-                                    f.write(formats["e"].format(xe)) #f.write(str(xe) + " ")
-                                    f.write(formats["i"].format(xi)) #f.write(str(xi) + " ")
-                                    f.write(formats["o"].format(xo)) #f.write(str(xo) + " ")
-                                    f.write(formats["O"].format(xO)) #f.write(str(xO) + " ")
-                                    f.write(formats["M"].format(xM)) #f.write(str(xM) + " ")
+                                    for elm in elements:
+                                        f.write(form_string[elm].format(x_elm[elm]))
                                     f.write("0.0\n") # mass of asteroid
                                 #</for xM>
                             # </for xO>
@@ -423,39 +426,64 @@ while True:
         if "_calc_" in event:
             #ivdelta = values["iv_v"] # 1 wenn angeklickt, sonst 0
             print("ivdelta:", ivdelta)
+            try:
+                a_min = float(values["ast_min_"+elm])
+            except:
+                sg.Popup("Error",custom_text="Min-Value is not a float!",no_titlebar=True)
+                continue # while True, window.read(
+            try:
+                a_max = float(values["ast_max_"+elm])
+            except:
+                sg.Popup("Error",custom_text="Max-Value is not a float!",no_titlebar=True)
+                continue  # while True, window.read(
+            try:
+                a_stp = float(values["ast_step_"+elm])
+            except:
+                sg.Popup("Error",custom_text="Step-Value is not a float!",no_titlebar=True)
+                continue  # while True, window.read(
+            try:
+                a_amo = float(values["ast_amount_"+elm])
+            except:
+                sg.Popup("Error", custom_text="Amount-Value is not an integer!", no_titlebar=True)
+                continue  # while True, window.read(
+            if int(a_amo) == a_amo:
+                  a_amo = int(a_amo)
+            else:
+                sg.Popup("Error",custom_text="Amount-Value is not an integer!",no_titlebar=True)
+                continue  # while True, window.read(
+
             if what == "min":
                 try:
-                    result = ( float(values["ast_max_"+elm])
-                             - (float(values["ast_amount_"+elm])-ivdelta)
-                               * float(values["ast_step_"+elm])
-                             )
+                    result = a_max - (a_amo-ivdelta) * a_stp
                 except:
                     result = "Error!"
             elif what == "max":
-                try:
-                    result = ( (float(values["ast_amount_"+elm])-ivdelta)
-                             * float(values["ast_step_"+elm])
-                             + float(values["ast_min_"+elm])
-                             )
-                except:
-                    result = "Error!"
+                if a_stp == 0 or a_amo == 0:
+                    result = a_min
+                    sg.Popup("ToDo: Amount = 1 setzen!")
+                else:
+                    try:
+                        result = (a_amo-ivdelta) * a_stp + a_min
+                    except:
+                        result = "Error!"
             elif what == "step":
-                try:
-                    result = ( ( float(values["ast_max_"+elm])
-                             - float(values["ast_min_"+elm]) )
-                             / (float(values["ast_amount_"+elm])-ivdelta)
-                             )
-                except:
-                    result = "Error!"
+                if a_min == a_max or (a_amo-ivdelta) == 0:
+                    result = 0
+                    sg.Popup("ToDo: Amount = 1 oder max=min setzen!")
+                else:
+                    try:
+                        result = ( a_max - a_min ) / (a_amo-ivdelta)
+                    except:
+                        result = "Error!"
             elif what == "amount":
-                try:
-                    result = float( ( float(values["ast_max_"+elm])
-                               - float(values["ast_min_"+elm]) )
-                               / float(values["ast_step_"+elm])
-                               + ivdelta
-                             )
-                except:
-                    result = "Error!"
+                if a_min == a_max or a_stp == 0:
+                    result = 1 + ivdelta
+                    sg.Popup("ToDo: Step = 0 oder max=min setzen!")
+                else:
+                    try:
+                        result = float( ( a_max - a_min ) / a_stp + ivdelta )
+                    except:
+                        result = "Error!"
             #<what == ...>
             window["ast_"+what+"_"+elm].update(result)
             values["ast_"+what+"_"+elm] = result
