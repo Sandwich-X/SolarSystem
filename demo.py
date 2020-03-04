@@ -77,10 +77,10 @@ def recalc_total():
     sum = 1
     for elm in elements:
         try:
-            sum *= (float(values["ast_amount_" + elm]) + 1 - ivdelta)
+            sum *= (float(values["ast_amount_" + elm]) + 1 - delta_iv)
         except:
             #print("values[ast_amount_" + e, "] :", values["ast_amount_" + e] )
-            #print("ivdelta:", ivdelta)
+            #print("delta_iv:", delta_iv)
             print("error calculating amount " + elm)
             window["ast_total"].update("\u03a3: 5^6 ?") # u03a3 = \N{greek capital letter sigma}
             break
@@ -149,9 +149,9 @@ def create_layout(checks=allchecks, l2 = False): # l2: Layout2 ("Create")
              [[sg.Button("Write", disabled = not l2, tooltip=" Write input-file for Fortran-program "),
                sg.Button("Run",   disabled = not l2, tooltip=" Run Fortran-program ") ]]),
          ],
-        [sg.Text('')], # "Verwendete Planeten:"
-        [sg.TabGroup([[sg.Tab('Tab 1', tab1_layout),
-                       sg.Tab('Tab 2', tab2_layout)]])],
+        #[sg.Text('')], # "Verwendete Planeten:"
+        #[sg.TabGroup([[sg.Tab('Tab 1', tab1_layout),
+        #               sg.Tab('Tab 2', tab2_layout)]])],
     ]
 
 def create_layout2():
@@ -264,6 +264,7 @@ def create_layout2():
         #layout2.append(row)
         #--- asteroids amount ------
         # ------ random ----
+        layout2.append([sg.StatusBar(" "*40, key="status", auto_size_text=True, tooltip=" StatusBar ")])
     # end for
     return layout2
 
@@ -273,11 +274,13 @@ def create_range(elm):
                     +float(values["ast_step_"+elm]),
                      float(values["ast_step_"+elm]))
 
+#def correct_amo(amo, k): # k = key # change amount in special cases
+
 layout = create_layout()
 loc = (10, 30)
 window = sg.Window('N-Body Lie (1)', location=loc).Layout(layout)
 
-ivdelta = 0 # Intervals, not Values for asteroids
+delta_iv = 0 # = Intervals, 1 = Values for asteroids
 
 while True:
     event, values = window.read()
@@ -400,17 +403,17 @@ while True:
                  window["val_"+elm+"_"+targetrow].update(default_planets[sourceplanet].__dict__[elm])
     #---- asteroiden - klumpert ------
     if event == "iv_i":
-        if ivdelta == 0: # nothing to do
+        if delta_iv == 0: # nothing to do
             continue # while-loop
-        ivdelta = 0
+        delta_iv = 0
         # recalc: subtract 1 from asteroids-amounts
         for elm in elements:
             window["ast_amount_" + elm].update(float(values["ast_amount_" + elm]) -1 )
         print("iv_i geklickt")
     elif event == "iv_v":
-        if ivdelta == 1: # nothing to do
+        if delta_iv == 1: # nothing to do
             continue # while-loop
-        ivdelta = 1
+        delta_iv = 1
         # recalc: add 1 to asteroids-amounts
         for elm in elements:
             window["ast_amount_" + elm].update(float(values["ast_amount_" + elm]) +1 )
@@ -424,8 +427,8 @@ while True:
         elif what == "amo":
             what = "amount"
         if "_calc_" in event:
-            #ivdelta = values["iv_v"] # 1 wenn angeklickt, sonst 0
-            print("ivdelta:", ivdelta)
+            #delta_iv = values["iv_v"] # 1 wenn angeklickt, sonst 0
+            print("delta_iv:", delta_iv)
             try:
                 a_min = float(values["ast_min_"+elm])
             except:
@@ -442,53 +445,74 @@ while True:
                 sg.Popup("Error",custom_text="Step-Value is not a float!",no_titlebar=True)
                 continue  # while True, window.read(
             try:
-                a_amo = float(values["ast_amount_"+elm])
+                a_amo = float(values["ast_amount_"+elm]) - delta_iv # = intervals, not values
             except:
                 sg.Popup("Error", custom_text="Amount-Value is not an integer!", no_titlebar=True)
                 continue  # while True, window.read(
             if int(a_amo) == a_amo:
                   a_amo = int(a_amo)
             else:
-                sg.Popup("Error",custom_text="Amount-Value is not an integer!",no_titlebar=True)
-                continue  # while True, window.read(
+                sg.Popup("Error",custom_text="Amount-Value is not an integer!", no_titlebar=True)
+                continue  # while True, window.read()
 
-            if what == "min":
+            if   ( ( what == "step"        and a_min == a_max ) or \
+                   ( what in ["min","max"] and a_stp == 0.0 ) ) and a_amo != 0:
+                a_amo = delta_iv
+                window["ast_amount_" + elm].update(a_amo)
+                values["ast_amount_" + elm] = a_amo  # sync values & window
+                window["status"].update(" Asteroids: " + elm + ": Amount set to " + str(a_amo) + " ")
+            elif ( ( what == "amount"      and a_min == a_max ) or \
+                   ( what in ["min","max"] and a_amo == 0   ) ) and a_stp != 0.0:
+                a_step = 0.0
+                window["ast_step_" + elm].update(a_step)
+                values["ast_step_" + elm] = a_step  # sync values & window
+                window["status"].update(" Asteroids: " + elm + ": Step set to " + str(a_step) + " ")
+
+            if what == "min": # calculate MINimum (a_min)
                 try:
-                    result = a_max - (a_amo-ivdelta) * a_stp
+                    result = a_max - a_amo * a_stp
                 except:
                     result = "Error!"
-            elif what == "max":
-                if a_stp == 0 or a_amo == 0:
-                    result = a_min
-                    sg.Popup("ToDo: Amount = 1 setzen!")
-                else:
-                    try:
-                        result = (a_amo-ivdelta) * a_stp + a_min
-                    except:
-                        result = "Error!"
-            elif what == "step":
-                if a_min == a_max or (a_amo-ivdelta) == 0:
-                    result = 0
-                    sg.Popup("ToDo: Amount = 1 oder max=min setzen!")
-                else:
-                    try:
-                        result = ( a_max - a_min ) / (a_amo-ivdelta)
-                    except:
-                        result = "Error!"
-            elif what == "amount":
-                if a_min == a_max or a_stp == 0:
-                    result = 1 + ivdelta
-                    sg.Popup("ToDo: Step = 0 oder max=min setzen!")
-                else:
-                    try:
-                        result = float( ( a_max - a_min ) / a_stp + ivdelta )
-                    except:
-                        result = "Error!"
+            elif what == "max": # calculate MAXimum (a_max)
+                try:
+                    result = a_amo * a_stp + a_min
+                except:
+                    result = "Error!"
+            elif what == "step": # calculate STEPwidth (a_stp)
+                try:
+                    result = ( a_max - a_min ) / a_amo
+                except:
+                    result = "Error!"
+            elif what == "amount": # calculate AMOUNT (a_amo)
+                try:
+                    result = float( ( a_max - a_min ) / a_stp + delta_iv )
+                except:
+                    result = "Error!"
             #<what == ...>
+            # correction, "side effects":
+            #           |----------- calculating ("what") ------------|
+            # circumst. |   MIN   |   MAX   |     STP    |     AMO    |
+            # ----------+---------+---------+------------+------------+
+            # MIN = MAX |         |         | amo -> 0   | stp -> 0   |
+            # ----------+---------+---------+------------+------------+
+            # STEP = 0  | amo -> 0          |            | max -> min |
+            # ----------+---------+---------+------------+------------+
+            # AMO = 0   | stp -> 0          | max -> min |            |
+            # ----------+---------+---------+------------+------------+
+            # derzeit Error bei:
+            # step = 0, calc. amount
+            # amount = 0, calc. step
+
+            if   ( ( what == "step"   and a_amo == 0   ) or \
+                   ( what == "amount" and a_stp == 0.0 ) ) and a_min != a_max:
+                window["ast_max_" + elm].update(a_min)
+                values["ast_max_" + elm] = a_min  # sync values & window
+                window["status"].update(" Asteroids: " + elm + ": Max set to Min ")
+
             window["ast_"+what+"_"+elm].update(result)
             values["ast_"+what+"_"+elm] = result
             #--- disable calc buttons until new manual change
-            for w in ("min", "max", "step", "amount"):
+            for w in ("min", "max", "step", "amount"): # w = what
                 k = "ast_" + w + "_calc_" + elm # key
                 window[k].update(disabled=True)
 
