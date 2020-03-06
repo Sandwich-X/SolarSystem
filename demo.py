@@ -148,7 +148,7 @@ def create_layout(checks=allchecks, l2 = False): # l2: Layout2 ("Create")
 	     sg.Frame(" Calculation ",
              [[sg.Button("Write", disabled = not l2, tooltip=" Write input-file for Fortran-program "),
                sg.Button("Run",   disabled = not l2, tooltip=" Run Fortran-program ") ]]),
-         ],
+        ],
         #[sg.Text('')], # "Verwendete Planeten:"
         #[sg.TabGroup([[sg.Tab('Tab 1', tab1_layout),
         #               sg.Tab('Tab 2', tab2_layout)]])],
@@ -164,19 +164,20 @@ def create_layout2():
     # ??? list.copy() ???
     layout2 = create_layout(checks=newchecks, l2=True)
     sz = (14,1)
-    layout2.append([sg.Text(" Name", background_color="grey", size=(12,1)),
-                    sg.Text("", size=(8,1)),
-                    sg.Text(" a   [ AU ]",       background_color="grey", size=sz, tooltip=" Semimajor axis "),
-                    sg.Text(" e"       ,         background_color="grey", size=sz, tooltip=" Eccentricity "),
-                    sg.Text(" i   [ ° ] ",      background_color="grey", size=sz, tooltip=" Inclination "),
-                    sg.Text(" \u03c9   [ ° ] ", background_color="grey", size=sz, tooltip=" Argument of periapsis "),
-                    sg.Text(" \u03a9   [ ° ] ", background_color="grey", size=sz, tooltip=" Longitude of the ascending node "),
-                    sg.Text(" M   [ ° ] ",      background_color="grey", size=sz, tooltip=" Mean anomaly "),
-                    sg.Text(" m   [ m_Sol ]",    background_color="grey", size=sz, tooltip=" Mass "),
-                    ])
-    # \u03c9 = \N{greek small letter omega}
-    # \u03a9 = \N{greek capital letter omega}
-    # \N{SUBSCRIPT two}
+    row = [sg.Text(" Name", background_color="grey", size=(12,1)),
+           #sg.Text("", size=(8,1)),
+           sg.Combo(values=["0: ELE ", "1: HEL ", "2: BAR "],
+                    default_value="0: ELE ",
+                    key="coord_type",
+                    tooltip=" Type of coordinates: " \
+                        + "\n   0: ELEments (orbital) " \
+                        + "\n   1: HELiocentric " \
+                        + "\n   2: BARycentric ",
+                    size=(6,1), enable_events=True)]
+    for i in range(1,7): # 1, ..., 6
+        row.append(sg.Text(key="coord_"+str(i), background_color="grey", size=sz))
+    row.append(sg.Text(" m   [ m_Sol ]"  , tooltip=" Mass ", background_color="grey", size=sz))
+    layout2.append(row)
     extra_planets = {}
     for i in range(values["extra"]):
         extra_planets["X"+str(i+1)] = Planet(name="X"+str(i+1))
@@ -188,7 +189,7 @@ def create_layout2():
             row.append(sg.Text(p.name, size=(12,0)))
             if p.name[0] == "X":
                 row.append(sg.Combo(values=[n for n in list(default_planets.keys())+list(extra_planets.keys()) if (n != "Sun" and n!=p.name)],
-                             default_value = "Earth",
+                             #default_value = "Earth",
                              key = p.name + "_copy", size=(6,1),
 			     tooltip=" copy from ",
                              enable_events = True))
@@ -204,10 +205,10 @@ def create_layout2():
             #col_o.append([sg.Input(p.o, size=(15, 1),
             #                       key="val_o_" + p.name)])
             layout2.append(row)
-    #### asteroiden ------
+    #### asteroids ------
     if values["asteroids"]:
         #------- astro min
-        row = [sg.Text("Asteroiden minimum:", size=(22,0))]
+        row = [sg.Text("Asteroids minimum:", size=(22,0))]
         for elm in elements:
             #row.append(sg.InputText(default_text="0", key="ast_min_"+elm, size=(15,0)))
             row.append(sg.Col(pad=(0,0),
@@ -219,7 +220,7 @@ def create_layout2():
                               sg.Button("*", key="ast_min_calc_" + elm, pad=(0,0))]]))
         layout2.append(row)
         #--- asteroids max
-        row = [sg.Text("Asteroiden maximum:", size=(22,0))]
+        row = [sg.Text("Asteroids maximum:", size=(22,0))]
         for elm in elements:
             #row.append(sg.InputText(default_text="0", key="ast_max_" + elm, size=(15, 0)))
             row.append(sg.Col(pad=(0,0),
@@ -231,7 +232,7 @@ def create_layout2():
                               sg.Button("*", key="ast_max_calc_" + elm, pad=(0,0))]]))
         layout2.append(row)
         #--- asteroids stepsize
-        row = [sg.Text("Asteroiden stepsize:", size=(22,0))]
+        row = [sg.Text("Asteroids stepsize:", size=(22,0))]
         for elm in elements:
             row.append(sg.Col(pad=(0,0),
                               layout=[[sg.InputText(
@@ -254,7 +255,7 @@ def create_layout2():
                                     size=(8,0),pad=(0,0),
                                     enable_events=True),
                                     sg.Button("*",key="ast_amount_calc_"+elm,pad=(0,0))]]))
-        row.append(sg.Text(" ? ",key="ast_total",size=(5,0)))
+        row.append(sg.Text(" ? ",key="ast_total",size=(10,0)))
         layout2.append(row)
         #row.append(sg.Column(layout=[[
         #    sg.Radio(text="stepsize", group_id="radio_"+elm, default=False, key ="radio_"+elm+"_steps" )],
@@ -264,38 +265,40 @@ def create_layout2():
         #layout2.append(row)
         #--- asteroids amount ------
         # ------ random ----
-        layout2.append([sg.StatusBar(" "*40, key="status", auto_size_text=True, tooltip=" StatusBar ")])
-    # end for
+    # end for elm
+    layout2.append([sg.StatusBar("", (80, 0), key="status", tooltip=" StatusBar ")]) # doppelt!!!
     return layout2
 
-def create_range(elm):
+def create_range(elm): # float range
     return np.arange(float(values["ast_min_"+elm]),
                      float(values["ast_max_"+elm])
                     +float(values["ast_step_"+elm]),
                      float(values["ast_step_"+elm]))
 
-#def correct_amo(amo, k): # k = key # change amount in special cases
-
 layout = create_layout()
-loc = (10, 30)
+layout.append([sg.StatusBar("", (80, 0), key="status", tooltip=" StatusBar ")]) # doppelt!!!
+
+loc = (0, 0)
 window = sg.Window('N-Body Lie (1)', location=loc).Layout(layout)
 
 delta_iv = 0 # = Intervals, 1 = Values for asteroids
 
 while True:
     event, values = window.read()
+    print("=== event:", event, "===")
     if event in [None, "Cancel"]:
         break
+    window["status"].update("")
     if event == "All":  # check all planets checkboxes
         for p in default_planets.keys():
             window["chk_"+p].update(True)
-    if event == "None": # uncheck all planets checkboxes
+    elif event == "None": # uncheck all planets checkboxes
         for p in default_planets.keys():
             window["chk_"+p].update(False)
-    if "img_" in event: # in list(default_planets.keys()): # if click on planet icon, toggle planet checkbox
+    elif "img_" in event: # in list(default_planets.keys()): # if click on planet icon, toggle planet checkbox
         new_key = event.replace("img","chk")
         window[new_key].update(not values[new_key])
-    if event == "Create":
+    elif event == "Create":
         win_tmp = sg.Window("Please wait ...",
                             [[sg.T("... until constellation is created!")]]).finalize()
         window.Close()
@@ -306,13 +309,14 @@ while True:
         recalc_total() # damit schon anfangs Zahl existiert
         # Problem: dict values ist noch nicht befüllt!
         win_tmp.close()
-    if event == "Save": # SAVE all parameters
+        #window["coord_type"].Invoke("0: ELE")
+    elif event == "Save": # SAVE all parameters
         print(values)
         filename = sg.PopupGetFile("Choose File Name for SAVE-ing")
         print(filename)
         with open(filename, 'wb') as handle: # wb: Write Binary
             pickle.dump(values, handle, protocol=0) # pickle.HIGHEST_PROTOCOL)
-    if event == "Load": # LOAD saved parameters
+    elif event == "Load": # LOAD saved parameters
         # zuerst checks, extra(planeten) und asteroids auslesen aus pickle
 	#   und formular neu bauen
         filename = sg.PopupGetFile("Choose File Name for LOAD-ing")
@@ -338,7 +342,7 @@ while True:
             values[k] = pickle_values[k]
             print("second time updating from pickle...", k)
         recalc_total()
-    if event == "Write": # WRITE input-file for Fortran-program
+    elif event == "Write": # WRITE input-file for Fortran-program
         print("Button 'Write' pressed")
         #filename = sg.PopupGetFile("Choose File Name for SAVE-ing")
         filewrite = sg.PopupGetFile("Choose File Name for WRITE-ing")
@@ -367,33 +371,69 @@ while True:
             f.write("\n")  # newline after all planets
             #dbg = False
             for x_elm["a"] in create_range("a"):
-                #print("xa :", xa)
+                #print("x_elm["a"] :", x_elm["a"])
                 for x_elm["e"] in create_range("e"):
-                    #print("  xe :", xe)
+                    #print("  x_elm["e"] :", x_elm["e"])
                     for x_elm["i"] in create_range("i"):
-                        #print("    xi :", xi)
+                        #print("    x_elm["i"] :", x_elm["i"])
                         for x_elm["o"] in create_range("o"):
-                            #print("      xo :", xo)
+                            #print("      x_elm["o"] :", x_elm["o"])
                             for x_elm["O"] in create_range("O"):
-                                #print("        xO :", xO)
+                                #print("        x_elm["O"] :", x_elm["O"])
                                 for x_elm["M"] in create_range("M"):
-                                    #print("          xM :", xM)
+                                    #print("          x_elm["M"] :", x_elm["M"])
                                     for elm in elements:
                                         f.write(form_string[elm].format(x_elm[elm]))
                                     f.write("0.0\n") # mass of asteroid
-                                #</for xM>
-                            # </for xO>
-                        # </for xo>
-                    # </for xi>
-                # </for xe>
-            # </for xa>
+                                # end for x_elm["M"]
+                            # end for x_elm["O"]
+                        # end for x_elm["o"]
+                    # end for x_elm["i"]
+                # end for x_elm["e"]
+            # end for x_elm["a"]
             f.write("# a_[AU]        eccentricity      inclinat.     omega         Omega          mean_anom.   mass_[sun]\n")
         #</with open>
         continue
-    if event == "Run":   # RUN Fortran-program
+    elif event == "Run":   # RUN Fortran-program
         print("Button 'Run' pressed")
         continue
-    if "_copy" in event: # COPY values from "regular" planet to X-planet
+    elif event == "coord_type":
+        ct = values["coord_type"][0] # 1st letter
+        print("ct :", ct)
+        if ct == "0":
+            print("ct-0 branch")
+            window["coord_1"].update("a   [AU]")
+            window["coord_1"].SetTooltip(" Semi-major axis ")
+            window["coord_2"].update(" e")
+            window["coord_2"].SetTooltip(" Eccentricity ")
+            window["coord_3"].update(" i   [ ° ] ")
+            window["coord_3"].SetTooltip(" Inclination ")
+            window["coord_4"].update(" \u03c9   [ ° ] ")
+            window["coord_4"].SetTooltip(" Argument of periapsis ")
+            window["coord_5"].update(" \u03a9   [ ° ] ")
+            window["coord_5"].SetTooltip(" Longitude of the ascending node ")
+            window["coord_6"].update(" M   [ ° ] ")
+            window["coord_6"].SetTooltip(" Mean anomaly ")
+            # \u03c9 = \N{greek small letter omega}
+            # \u03a9 = \N{greek capital letter omega}
+            # \N{SUBSCRIPT two}
+        elif ct == "1" or ct == "2":
+            print("ct-1|2 branch")
+            window["coord_1"].update(" x   [?]") #,background_color="green")
+            window["coord_1"].SetTooltip(" x Position ")
+            window["coord_2"].update(" y   [?]")
+            window["coord_2"].SetTooltip(" y Position ")
+            window["coord_3"].update(" z   [?]")
+            window["coord_3"].SetTooltip(" z Position ")
+            window["coord_4"].update(" v_x   [?]")
+            window["coord_4"].SetTooltip(" x Velocity ")
+            window["coord_5"].update(" v_y   [?]")
+            window["coord_5"].SetTooltip(" y Velocity ")
+            window["coord_6"].update(" v_z   [?]")
+            window["coord_6"].SetTooltip(" z Velocity ")
+        else:
+            print("ct-no branch")
+    elif "_copy" in event: # COPY values from "regular" planet to X-planet
         sourceplanet = values[event] # zB Jupiter
         targetrow = event[:2] # zB x2
         for elm in elements:
@@ -401,8 +441,8 @@ while True:
                 window["val_" + elm + "_" + targetrow].update(values["val_"+elm+"_"+sourceplanet])
             else:
                  window["val_"+elm+"_"+targetrow].update(default_planets[sourceplanet].__dict__[elm])
-    #---- asteroiden - klumpert ------
-    if event == "iv_i":
+    #---- asteroids - stuff ------
+    elif event == "iv_i":
         if delta_iv == 0: # nothing to do
             continue # while-loop
         delta_iv = 0
@@ -418,119 +458,151 @@ while True:
         for elm in elements:
             window["ast_amount_" + elm].update(float(values["ast_amount_" + elm]) +1 )
         print("iv_v geklickt")
-    if "ast_" in event:
+    elif "ast_" in event:
         print("Asteroiden-Zeux, event:", event)
-        elm = event[-1]
-        what = event[4:7] # Buchstaben 4, 5 und 6; 7 ist nicht mehr dabei!
-        if what == "ste":
-            what = "step"
-        elif what == "amo":
-            what = "amount"
+        elm = event[-1] # ELeMent
+        to_calc = event[4:7] # Buchstaben 4, 5 und 6; 7 ist nicht mehr dabei!
+        if to_calc == "ste":
+            to_calc = "step"
+        elif to_calc == "amo":
+            to_calc = "amount"
         if "_calc_" in event:
             #delta_iv = values["iv_v"] # 1 wenn angeklickt, sonst 0
-            print("delta_iv:", delta_iv)
-            try:
-                a_min = float(values["ast_min_"+elm])
-            except:
-                sg.Popup("Error",custom_text="Min-Value is not a float!",no_titlebar=True)
-                continue # while True, window.read(
-            try:
-                a_max = float(values["ast_max_"+elm])
-            except:
-                sg.Popup("Error",custom_text="Max-Value is not a float!",no_titlebar=True)
-                continue  # while True, window.read(
-            try:
-                a_stp = float(values["ast_step_"+elm])
-            except:
-                sg.Popup("Error",custom_text="Step-Value is not a float!",no_titlebar=True)
-                continue  # while True, window.read(
-            try:
-                a_amo = float(values["ast_amount_"+elm]) - delta_iv # = intervals, not values
-            except:
-                sg.Popup("Error", custom_text="Amount-Value is not an integer!", no_titlebar=True)
-                continue  # while True, window.read(
-            if int(a_amo) == a_amo:
-                  a_amo = int(a_amo)
-            else:
-                sg.Popup("Error",custom_text="Amount-Value is not an integer!", no_titlebar=True)
-                continue  # while True, window.read()
+            print("calc: delta_iv:", delta_iv)
+            if to_calc != "min":
+                try:
+                    a_min = float(values["ast_min_"+elm])
+                except:
+                    sg.Popup("Error",custom_text="Min-Value is not a float!",no_titlebar=True)
+                    continue # while True, window.read()
+            if to_calc != "max":
+                try:
+                    a_max = float(values["ast_max_"+elm])
+                except:
+                    sg.Popup("Error",custom_text="Max-Value is not a float!",no_titlebar=True)
+                    continue  # while True, window.read()
+            if to_calc != "step":
+                try:
+                    a_stp = float(values["ast_step_"+elm])
+                except:
+                    sg.Popup("Error",custom_text="Step-Value is not a float!",no_titlebar=True)
+                    continue  # while True, window.read()
+            if to_calc != "amount":
+                try:
+                    a_amo = float(values["ast_amount_"+elm]) - delta_iv # = intervals, not values
+                except:
+                    sg.Popup("Error", custom_text="Amount-Value is not an integer!", no_titlebar=True)
+                    continue  # while True, window.read()
+                if int(a_amo) == a_amo:
+                      a_amo = int(a_amo)
+                else:
+                    sg.Popup("Error",custom_text="Amount-Value is not an integer!", no_titlebar=True)
+                    continue  # while True, window.read()
 
-            if   ( ( what == "step"        and a_min == a_max ) or \
-                   ( what in ["min","max"] and a_stp == 0.0 ) ) and a_amo != 0:
-                a_amo = delta_iv
-                window["ast_amount_" + elm].update(a_amo)
-                values["ast_amount_" + elm] = a_amo  # sync values & window
-                window["status"].update(" Asteroids: " + elm + ": Amount set to " + str(a_amo) + " ")
-            elif ( ( what == "amount"      and a_min == a_max ) or \
-                   ( what in ["min","max"] and a_amo == 0   ) ) and a_stp != 0.0:
-                a_step = 0.0
-                window["ast_step_" + elm].update(a_step)
-                values["ast_step_" + elm] = a_step  # sync values & window
-                window["status"].update(" Asteroids: " + elm + ": Step set to " + str(a_step) + " ")
+            # correction, "side effects":
+            #if   ( ( to_calc == "step"        and a_min == a_max ) or \
+            #       ( to_calc in ["min","max"] and a_stp == 0.0 ) ) and a_amo != 0:
+            #    a_amo = delta_iv
+            #    window["ast_amount_" + elm].update(a_amo)
+            #    values["ast_amount_" + elm] = a_amo  # sync values & window
+            #    window["status"].update(" Asteroids: " + elm + ": Amount set to " + str(a_amo) + " ")
+            #elif ( ( to_calc == "amount"      and a_min == a_max ) or \
+            #       ( to_calc in ["min","max"] and a_amo == 0   ) ) and a_stp != 0.0:
+            #    a_step = 0.0
+            #    window["ast_step_" + elm].update(a_step)
+            #    values["ast_step_" + elm] = a_step  # sync values & window
+            #    window["status"].update(" Asteroids: " + elm + ": Step set to " + str(a_step) + " ")
 
-            if what == "min": # calculate MINimum (a_min)
+            if to_calc == "min": # calculate MINimum (a_min)
                 try:
                     result = a_max - a_amo * a_stp
                 except:
                     result = "Error!"
-            elif what == "max": # calculate MAXimum (a_max)
+            elif to_calc == "max": # calculate MAXimum (a_max)
                 try:
                     result = a_amo * a_stp + a_min
                 except:
                     result = "Error!"
-            elif what == "step": # calculate STEPwidth (a_stp)
-                try:
-                    result = ( a_max - a_min ) / a_amo
-                except:
-                    result = "Error!"
-            elif what == "amount": # calculate AMOUNT (a_amo)
-                try:
-                    result = float( ( a_max - a_min ) / a_stp + delta_iv )
-                except:
-                    result = "Error!"
-            #<what == ...>
+            elif to_calc == "step": # calculate STEPwidth (a_stp)
+                if a_amo == 0:
+                    if a_max == a_min:
+                        result = 0.0
+                    else:
+                        result = "Error!"
+                        window["status"].update(" Division by zero! ")
+                else:
+                    try:
+                        result = ( a_max - a_min ) / a_amo
+                    except:
+                        result = "Error!"
+                        window["status"].update(" Unknown error ")
+            elif to_calc == "amount": # calculate AMOUNT (a_amo)
+                if a_stp == 0:
+                    if a_max == a_min:
+                        result = 0.0
+                    else:
+                        result = "Error!"
+                        window["status"].update(" Division by zero! ")
+                else:
+                    try:
+                        result = float( ( a_max - a_min ) / a_stp + delta_iv )
+                    except:
+                        result = "Error!"
+                        window["status"].update(" Unknown error ")
+            #</ if to_calc == ...>
+
             # correction, "side effects":
-            #           |----------- calculating ("what") ------------|
-            # circumst. |   MIN   |   MAX   |     STP    |     AMO    |
-            # ----------+---------+---------+------------+------------+
-            # MIN = MAX |         |         | amo -> 0   | stp -> 0   |
-            # ----------+---------+---------+------------+------------+
-            # STEP = 0  | amo -> 0          |            | max -> min |
-            # ----------+---------+---------+------------+------------+
-            # AMO = 0   | stp -> 0          | max -> min |            |
-            # ----------+---------+---------+------------+------------+
+            #            |----------- calculating ("to_calc") ------------|
+            # circumst.  |   MIN   |   MAX   |     STP    |     AMO    |
+            # -----------+---------+---------+------------+------------+
+            # MIN == MAX |         |         | amo -> 0   | stp -> 0   |
+            # -----------+---------+---------+------------+------------+
+            # STEP == 0  | amo -> 0          |            | max -> min |
+            # -----------+---------+---------+------------+------------+
+            # AMO == 0   | stp -> 0          | max -> min |            |
+            # -----------+---------+---------+------------+------------+
+            # ggf. amount korrigieren, damit total_amount richtig
+            if   ( ( to_calc == "step"        and a_min == a_max ) or \
+                   ( to_calc in ["min","max"] and a_stp == 0.0 ) ) and a_amo != 0:
+                a_amo = delta_iv
+                window["ast_amount_" + elm].update(a_amo)
+                values["ast_amount_" + elm] = a_amo  # sync values & window
+                window["status"].update(" Asteroids: " + elm + ": Amount set to " + str(a_amo) + " ")
             # derzeit Error bei:
             # step = 0, calc. amount
             # amount = 0, calc. step
+            #
+            #if   ( ( to_calc == "step"   and a_amo == 0   ) or \
+            #       ( to_calc == "amount" and a_stp == 0.0 ) ) and a_min != a_max:
+            #    window["ast_max_" + elm].update(a_min)
+            #    values["ast_max_" + elm] = a_min  # sync values & window
+            #    window["status"].update(" Asteroids: " + elm + ": Max set to Min ")
 
-            if   ( ( what == "step"   and a_amo == 0   ) or \
-                   ( what == "amount" and a_stp == 0.0 ) ) and a_min != a_max:
-                window["ast_max_" + elm].update(a_min)
-                values["ast_max_" + elm] = a_min  # sync values & window
-                window["status"].update(" Asteroids: " + elm + ": Max set to Min ")
-
-            window["ast_"+what+"_"+elm].update(result)
-            values["ast_"+what+"_"+elm] = result
+            window["ast_"+to_calc+"_"+elm].update(result)
+            values["ast_"+to_calc+"_"+elm] = result
             #--- disable calc buttons until new manual change
-            for w in ("min", "max", "step", "amount"): # w = what
-                k = "ast_" + w + "_calc_" + elm # key
-                window[k].update(disabled=True)
+            #for tc in ("min", "max", "step", "amount"): # tc = to_calc
+            #    k = "ast_" + tc + "_calc_" + elm # key
+            #    window[k].update(disabled=True)
 
             #------- calculating total count of asteroids
-            if what == "amount" and result != "Error!":
+            if to_calc == "amount" and result != "Error!":
                 recalc_total()
                 if result != int(result):
-                    window["ast_" + what + "_" + elm].update(background_color="red")
+                    window["ast_" + to_calc + "_" + elm].update(background_color="#ffcccc")
+                    window["status"].update(" Amount must be a (" \
+                                            + ("positive" if delta_iv else "non-negative") \
+                                            +") integer! ")
                 else:
-                    window["ast_" + what + "_" + elm].update(background_color="white")
+                    window["ast_" + to_calc + "_" + elm].update(background_color="white")
 
         else: # <if "_calc_" in event:>
             '''händische Änderung eines asteroiden-inputfeldes, 
             jetzt kontrollieren ob spalte erlaubte Werte liefert'''
 
             #--- enable calc buttons because of new manual change
-            for w in ("min", "max", "step", "amount"):
-                k = "ast_" + w + "_calc_" + elm # key
+            for tc in ("min", "max", "step", "amount"):
+                k = "ast_" +tc + "_calc_" + elm # key
                 window[k].update(disabled=False)
 
             ### elm = event[-1]
@@ -545,7 +617,8 @@ while True:
                     red = True
                 print(red)
                 if red:
-                    window[event].update(background_color="red")
+                    window[event].update(background_color="#ffcccc")
+                    window["status"].update(" Amount must be an integer! ")
                 else:
                     window[event].update(background_color="white")
                 #  total amount of asteroids ausrechnen
@@ -563,4 +636,5 @@ while True:
                 #    window["ast_total"].update("Total: {}".format(result))
             #<if "_amount_" in event: # and "_calc_" not in event:>
         # <if "_calc_" in event:>
+    # end if elif event
 print("Bye")
