@@ -1,0 +1,189 @@
+# max - min = step * count
+
+def set_cnt_zero():
+  a_cnt = delta_iv # 0 (or 1)
+  window["...count..."].update(a_cnt)
+  values["...count..."] = a_cnt # for total_count
+  window["status"].update(" Set 'Count' to "+str(a_cnt),
+                          background_color="grey")
+#end def set_cnt_zero()
+
+san_min = sanity_check(...)
+san_max = sanity_check(...)
+san_stp = sanity_check(...)
+san_cnt = sanity_check(...)
+if calc == "min": # min = max - step * count
+  if not san_max:
+    result = "Error !"
+    window["status"].update(" Need float value for 'Max' to calculate 'Min'!")
+  else
+    if not san_stp:
+      if not san_cnt:
+        result = "Error !"
+        window["status"].update(" Need either one zero value in 'Step' or 'Count', or a float in 'Step' and an int in 'Count' to calculate 'Min'!")
+      elif a_cnt == 0:
+        result = a_max
+      else:
+        result = "Error !"
+        window["status"].update(" Need also a float value in 'Step' to calculate 'Min'!")
+      #end if not san_cnt
+    else: # san_stp = True
+      if a_stp == 0.0:
+        result = a_max
+	set_cnt_zero()
+      else:
+        if not san_cnt:
+          result = "Error !"
+          window["status"].update(" Need also a int value in 'Count' to calculate 'Min'!")
+        else:
+	  result = a_max - a_stp * a_cnt
+          window["status"].update(" Successfully calculated 'Min'.",
+                                  background_color="#ccffcc")
+        #end if not san_cnt
+      #end if a_stp == 0.0
+    #end if not san_stp
+  #end if not san_max
+elif calc == "max": # max = min + step * count # similar to before but min <-> max
+  if not san_min:
+    result = "Error !"
+    window["status"].update(" Need float value for 'Min' to calculate 'Max'!")
+  else
+    if not san_stp:
+      if not san_cnt:
+        result = "Error !"
+        window["status"].update(" Need either one zero value in 'Step' or 'Count', or a float in 'Step' and an int in 'Count' to calculate 'Max'!")
+      elif a_cnt == 0:
+        result = a_min
+      else:
+        result = "Error !"
+        window["status"].update(" Need also a float value in 'Step' to calculate 'Max'!")
+      #end if not san_cnt
+    else: # san_stp = True
+      if a_stp == 0.0:
+        result = a_min
+	set_cnt_zero()
+      else:
+        if not san_cnt:
+          result = "Error !"
+          window["status"].update(" Need also a int value in 'Count' to calculate 'Max'!")
+        else:
+	  result = a_min + a_stp * a_cnt
+          window["status"].update(" Successfully calculated 'Max'.",
+                                  background_color="#ccffcc")
+        #end if not san_cnt
+      #end if a_stp == 0.0
+    #end if not san_stp
+  #end if not san_min
+elif calc == "stp": # step = ( max - min ) / count
+  if not san_cnt:
+    if san_min and san_max:
+      if a_min == a_max:
+        result = 0.0
+        set_cnt_zero()
+      else:
+        result = "Error !"
+        window["status"].update(" Need an (int) value for 'Count' or 'Min'='Max' to calculate 'Step'!",
+                                background_color="#ffcccc")
+      #end if a_min == a_max
+    #end if san_min and san_max
+  else: # san_cnt=True
+    if a_cnt == 0:
+      result = 0.0
+      if san_min:
+        a_max = a_min
+        window["...max..."].update(a_max)
+        #values["...max..."] = a_max # not necessary
+        window["status"].update(" Set 'Max' to "+str(a_max),
+                                background_color="grey")
+      elif san_max:
+        a_min = a_max
+        window["...min..."].update(a_min)
+        #values["...min..."] = a_min # not necessary
+        window["status"].update(" Set 'Min' to "+str(a_min),
+                                background_color="grey")
+      #end if san_min elif san_max
+    else: # a_cnt != 0
+      if not san_min:
+        result = "Error !"
+        window["status"].update(" Need (float) value for 'Min' to calculate 'Step'!",
+                              background_color="#ffcccc")
+      elif not san_max:
+        result = "Error !"
+        window["status"].update(" Need (float) value for 'Max' to calculate 'Step'!",
+                              background_color="#ffcccc")
+      else: # san_min=True and san_max=True
+        result = ( a_max - a_min ) / a_cnt
+        window["status"].update(" Successfully calculated 'Step'.",
+                                background_color="#ccffcc")
+      #end if not san_min elif not san_max else
+    #end if a_cnt == 0 else
+  #end if not san_cnt else
+elif calc == "cnt": # count = ( max - min ) / step # similar to before but stp <-> cnt
+  if not san_stp:
+    if san_min and san_max:
+      if a_min == a_max:
+        result = 0.0
+        #set_stp_zero() : # useful because not san_stp
+        a_stp = 0.0
+        window["...count..."].update(a_stp)
+        values["...count..."] = a_stp # for total_count
+        window["status"].update(" Set 'Step' to "+str(a_stp),
+                                background_color="grey")
+        #end set_stp_zero()
+      else:
+        result = "Error !"
+        window["status"].update(" Need an (int) value for 'Step' or 'Min'='Max' to calculate 'Count'!",
+                                background_color="#ffcccc")
+      #end if a_min == a_max
+    #end if san_min and san_max
+  else: # san_stp=True
+    if a_stp == 0:
+      result = 0.0
+      if san_min:
+        a_max = a_min
+        window["...max..."].update(a_max)
+        #values["...max..."] = a_max # not necessary
+        window["status"].update(" Set 'Max' to "+str(a_max),
+                                background_color="grey")
+      elif san_max:
+        a_min = a_max
+        window["...min..."].update(a_min)
+        #values["...min..."] = a_min # not necessary
+        window["status"].update(" Set 'Min' to "+str(a_min),
+                                background_color="grey")
+      #end if san_min elif san_max
+    else: # a_stp != 0
+      if not san_min:
+        result = "Error !"
+        window["status"].update(" Need (float) value for 'Min' to calculate 'Count'!",
+                              background_color="#ffcccc")
+      elif not san_max:
+        result = "Error !"
+        window["status"].update(" Need (float) value for 'Max' to calculate 'Count'!",
+                              background_color="#ffcccc")
+      else: # san_min=True and san_max=True
+        result = ( a_max - a_min ) / a_stp + ivdelta
+        window["status"].update(" Successfully calculated 'Count'.",
+                                background_color="#ccffcc")
+        window["...cnt..."].update(result) # for total_count
+      #end if not san_min elif not san_max else
+    #end if a_stp == 0 else
+  #end if not san_stp else
+#end if calc == ...
+
+# incl., excl.
+#-------+---------+-----------------+
+#       |         |      Count      |
+# Werte | Interv. +-----+-----+-----+
+#       |         | i i | i e | e e |
+#-------+---------+-----+-----+-----+
+#     5 |       4 |   5 |   4 |   3 |
+#-------+---------+-----+-----+-----+
+#     4 |       3 |   4 |   3 |   2 |
+#-------+---------+-----+-----+-----+
+#     3 |       2 |   3 |   2 |   1 |
+#-------+---------+-----+-----+-----+
+#     2 |       1 |   2 |   1 | * 0 |
+#-------+---------+-----+-----+-----+
+#     1 |       0 |   1 | * 0 | *-1 |
+#-------+---------+-----+-----+-----+
