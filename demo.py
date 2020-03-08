@@ -82,11 +82,11 @@ def recalc_total():
             #print("values[ast_amount_" + e, "] :", values["ast_amount_" + e] )
             #print("delta_iv:", delta_iv)
             print("error calculating amount " + elm)
-            window["ast_total"].update("\u03a3: 5^6 ?") # u03a3 = \N{greek capital letter sigma}
+            window["ast_total"].update("5^6 ?") # u03a3 = \N{greek capital letter sigma}
             break
     else:  # schleife lief vollständig durch ohne ein einziges break
         print("recalculating without errors. Result =", sum)
-        window["ast_total"].update("\u03a3: {}".format(sum))
+        window["ast_total"].update(sum)
 
 def create_cols(checks):
     """checks is a list of Booleans"""
@@ -205,19 +205,22 @@ def create_layout2():
             #col_o.append([sg.Input(p.o, size=(15, 1),
             #                       key="val_o_" + p.name)])
             layout2.append(row)
-    #### asteroids ------
+    #--- asteroids
     if values["asteroids"]:
-        #------- astro min
+        #--- asteroids min
         row = [sg.Text("Asteroids minimum:", size=(22,0))]
         for elm in elements:
-            #row.append(sg.InputText(default_text="0", key="ast_min_"+elm, size=(15,0)))
-            row.append(sg.Col(pad=(0,0),
-                          layout=[[sg.InputText(
+            row.append(sg.InputText(
                               default_text="0",
-                              key="ast_min_" + elm,
-                              size=(8,0), pad=(0,0),
-                              enable_events=True),
-                              sg.Button("*", key="ast_min_calc_" + elm, pad=(0,0))]]))
+                              key="ast_min_"+elm,
+                              size=(9,0),pad=((4,0),0)))
+            row.append(sg.Button("*", key="ast_min_calc_" + elm,tooltip=" Calculate ",size=(0,0),pad=((1,9),0)))
+        layout2.append(row)
+        #--- asteroids include min max
+        row = [sg.Text("Ast. include min,max:", size=(22,0))]
+        for i in range(1,7):
+            row.append(sg.Checkbox("min",key="ast_min_incl_"+str(i),tooltip=" include Min "+str(i),default=True,pad=(0,0)))
+            row.append(sg.Checkbox("max",key="ast_max_incl_"+str(i),tooltip=" include Max "+str(i),default=True,pad=((0,12),0)))
         layout2.append(row)
         #--- asteroids max
         row = [sg.Text("Asteroids maximum:", size=(22,0))]
@@ -229,7 +232,7 @@ def create_layout2():
                               key="ast_max_" + elm,
                               size=(8,0), pad=(0,0),
                               enable_events=True),
-                              sg.Button("*", key="ast_max_calc_" + elm, pad=(0,0))]]))
+                              sg.Button("*", key="ast_max_calc_" + elm,tooltip=" Calculate ",pad=(0,0))]]))
         layout2.append(row)
         #--- asteroids stepsize
         row = [sg.Text("Asteroids stepsize:", size=(22,0))]
@@ -240,12 +243,12 @@ def create_layout2():
                                     key="ast_step_"+elm,
                                     size=(8,0),pad=(0,0),
                                     enable_events=True),
-                                    sg.Button("*",key="ast_step_calc_"+elm,pad=(0,0))]]))
+                                    sg.Button("*",key="ast_step_calc_"+elm,tooltip=" Calculate ",pad=(0,0))]]))
         layout2.append(row)
         #--- asteroids amount
         row = [sg.Text("Ast. amount:", size=(11, 0)),
                sg.Radio("I",tooltip=" Intervals ",group_id="iv",key="iv_i",enable_events=True,default=True,pad=(0,0)),
-               sg.Radio("V",tooltip=" Values ",   group_id="iv",key="iv_v",enable_events=True,default=False,pad=(0,0)),
+               sg.Radio("V",tooltip=" Values ",   group_id="iv",key="iv_v",enable_events=True,default=False,pad=((0,2),0)),
                ]
         for elm in elements:
             row.append(sg.Col(pad=(0,0),
@@ -254,8 +257,10 @@ def create_layout2():
                                     key="ast_amount_"+elm,
                                     size=(8,0),pad=(0,0),
                                     enable_events=True),
-                                    sg.Button("*",key="ast_amount_calc_"+elm,pad=(0,0))]]))
-        row.append(sg.Text(" ? ",key="ast_total",size=(10,0)))
+                                    sg.Button("*",key="ast_amount_calc_"+elm,tooltip=" Calculate ",pad=(0,0))]]))
+        row.append(sg.Text(" \u03a3: ",tooltip=" Total count of asteroids ",pad=(0,0),background_color="grey"))
+        # u03a3 = \N{greek capital letter sigma}
+        row.append(sg.Text(" ? ",key="ast_total",tooltip=" Total count of asteroids ",size=(10,0),pad=(0,0),background_color="grey"))
         layout2.append(row)
         #row.append(sg.Column(layout=[[
         #    sg.Radio(text="stepsize", group_id="radio_"+elm, default=False, key ="radio_"+elm+"_steps" )],
