@@ -24,6 +24,7 @@ class Planet():
         self.m = m # mass
     def __repr__(self):
         return self.name
+#end class Planet()
 
 elements = ["a", "e", "i", "o", "O", "M", "m"] # orbital elements names # __dict__ ?
 x_elm = {}
@@ -77,16 +78,17 @@ def recalc_total():
     sum = 1
     for elm in elements:
         try:
-            sum *= (float(values["ast_amount_" + elm]) + 1 - delta_iv)
+            sum *= (float(values["ast_cnt_" + elm]) + 1 - delta_iv)
         except:
-            #print("values[ast_amount_" + e, "] :", values["ast_amount_" + e] )
+            #print("values[ast_cnt_" + e, "] :", values["ast_cnt_" + e] )
             #print("delta_iv:", delta_iv)
-            print("error calculating amount " + elm)
+            print("error calculating count " + elm)
             window["ast_total"].update("5^6 ?") # u03a3 = \N{greek capital letter sigma}
             break
     else:  # schleife lief vollständig durch ohne ein einziges break
         print("recalculating without errors. Result =", sum)
         window["ast_total"].update(sum)
+#end def recalc_total()
 
 def create_cols(checks):
     """checks is a list of Booleans"""
@@ -111,12 +113,13 @@ def create_cols(checks):
             element_justification="center", pad=(0,5))) # size & pad in pixels
         #print("cols created:", cols)
     return cols
+#end def create_cols(checks)
 
 def create_layout(checks=allchecks, l2 = False): # l2: Layout2 ("Create")
     # zwex Test
-    tab1_layout = [[sg.T('This is inside tab 1')]]
-    tab2_layout = [[sg.T('This is inside tab 2')],
-                   [sg.In(key='in')]]
+    #tab1_layout = [[sg.T('This is inside tab 1')]]
+    #tab2_layout = [[sg.T('This is inside tab 2')],
+    #               [sg.In(key='in')]]
     return [
         [sg.Text('Solar System N-Body Integrator', size=(30, 1))],
         create_cols(checks),
@@ -153,6 +156,7 @@ def create_layout(checks=allchecks, l2 = False): # l2: Layout2 ("Create")
         #[sg.TabGroup([[sg.Tab('Tab 1', tab1_layout),
         #               sg.Tab('Tab 2', tab2_layout)]])],
     ]
+#end def create_layout(checks=allchecks, l2 = False)
 
 def create_layout2():
     newchecks = []
@@ -240,13 +244,13 @@ def create_layout2():
             row.append(sg.Col(pad=(0,0),
                               layout=[[sg.InputText(
                                     default_text="2",
-                                    key="ast_step_"+elm,
+                                    key="ast_stp_"+elm,
                                     size=(8,0),pad=(0,0),
                                     enable_events=True),
-                                    sg.Button("*",key="ast_step_calc_"+elm,tooltip=" Calculate ",pad=(0,0))]]))
+                                    sg.Button("*",key="ast_stp_calc_"+elm,tooltip=" Calculate ",pad=(0,0))]]))
         layout2.append(row)
-        #--- asteroids amount
-        row = [sg.Text("Ast. amount:", size=(11, 0)),
+        #--- asteroids count
+        row = [sg.Text("Ast. count:", size=(11, 0)),
                sg.Radio("I",tooltip=" Intervals ",group_id="iv",key="iv_i",enable_events=True,default=True,pad=(0,0)),
                sg.Radio("V",tooltip=" Values ",   group_id="iv",key="iv_v",enable_events=True,default=False,pad=((0,2),0)),
                ]
@@ -254,10 +258,10 @@ def create_layout2():
             row.append(sg.Col(pad=(0,0),
                               layout=[[sg.InputText(
                                     default_text="5",
-                                    key="ast_amount_"+elm,
+                                    key="ast_cnt_"+elm,
                                     size=(8,0),pad=(0,0),
                                     enable_events=True),
-                                    sg.Button("*",key="ast_amount_calc_"+elm,tooltip=" Calculate ",pad=(0,0))]]))
+                                    sg.Button("*",key="ast_cnt_calc_"+elm,tooltip=" Calculate ",pad=(0,0))]]))
         row.append(sg.Text(" \u03a3: ",tooltip=" Total count of asteroids ",pad=(0,0),background_color="grey"))
         # u03a3 = \N{greek capital letter sigma}
         row.append(sg.Text(" ? ",key="ast_total",tooltip=" Total count of asteroids ",size=(10,0),pad=(0,0),background_color="grey"))
@@ -268,17 +272,270 @@ def create_layout2():
         #    [sg.Radio(text="random",   group_id="radio_"+elm, default=False, key ="radio_"+elm+"_random")]
         #    ]))
         #layout2.append(row)
-        #--- asteroids amount ------
+        #--- asteroids count ------
         # ------ random ----
     # end for elm
     layout2.append([sg.StatusBar("", (80, 0), key="status", tooltip=" StatusBar ")]) # doppelt!!!
     return layout2
+#end def create_layout2()
+
+def set_cnt_zero():
+    a_cnt = delta_iv  # 0 (or 1)
+    window["ast_cnt_"+elm].update(a_cnt)
+    values["ast_cnt_"+elm] = a_cnt  # for total_count
+    window["status"].update(" Set 'Count' to " + str(a_cnt),
+                            background_color="grey")
+# end def set_cnt_zero()
+
+def san_check_and_calc(iv_delta):
+    #sanity_check:
+    try:
+        a_min = float(values["ast_min_" + elm])
+        san_min = True
+    except:
+        san_min = False
+    print("san_min:", san_min)
+    try:
+        a_max = float(values["ast_max_" + elm])
+        san_max = True
+    except:
+        san_max = False
+    print("san_max:", san_max)
+    try:
+        a_stp = float(values["ast_stp_" + elm])
+        san_stp = True
+    except:
+        san_stp = False
+    print("san_stp:", san_stp)
+    try: # hier fortsetzen !!!???
+        print('values["ast_cnt_'+elm+'"] :',
+               values["ast_cnt_"+elm   ] )
+        a_cnt = int(values["ast_cnt_" + elm])
+        san_cnt = True
+    except:
+        san_cnt = False
+    print("san_cnt:", san_cnt)
+    #end sanity check
+    # basic equation: max - min = step * count
+    if to_calc == "min":  # min = max - step * count
+        if not san_max:
+            return ("Error !",
+                    "Need float value for 'Max' to calculate 'Min'!")
+        else:
+            if not san_stp:
+                if not san_cnt:
+                    return ("Error !",
+                            "Need either one zero value in 'Step' or 'Count', or a float in 'Step' and an int in 'Count' to calculate 'Min'!")
+                elif a_cnt == 0:
+                    return (a_max,)
+                else:
+                    return ("Error !",
+                            "Need also a float value in 'Step' to calculate 'Min'!")
+                # end if not san_cnt
+            else:  # san_stp = True
+                if a_stp == 0.0:
+                    return (a_max,)
+                    set_cnt_zero()
+                else:
+                    if not san_cnt:
+                        return ("Error !",
+                                "Need also a int value in 'Count' to calculate 'Min'!")
+                    else:
+                        return (a_max - a_stp * a_cnt,
+                                "Successfully calculated 'Min'.",
+                                "#99ff99")
+                    # end if not san_cnt
+                # end if a_stp == 0.0
+            # end if not san_stp
+        # end if not san_max
+    elif to_calc == "max":  # max = min + step * count # similar to before but min <-> max
+        if not san_min:
+            return ("Error !",
+                    "Need float value for 'Min' to calculate 'Max'!")
+        else:
+            if not san_stp:
+                if not san_cnt:
+                    return ("Error !",
+                            "Need either one zero value in 'Step' or 'Count', or a float in 'Step' and an int in 'Count' to calculate 'Max'!")
+                elif a_cnt == 0:
+                    return (a_min,)
+                else:
+                    return ("Error !",
+                            "Need also a float value in 'Step' to calculate 'Max'!")
+                # end if not san_cnt
+            else:  # san_stp = True
+                if a_stp == 0.0:
+                    set_cnt_zero()
+                    return (a_min,)
+                else:
+                    if not san_cnt:
+                        return ("Error !",
+                                "Need also a int value in 'Count' to calculate 'Max'!")
+                    else:
+                        return (a_min + a_stp * a_cnt,
+                                "Successfully calculated 'Max'.",
+                                "#99ff99")
+                    # end if not san_cnt
+                # end if a_stp == 0.0
+            # end if not san_stp
+        # end if not san_min
+    elif to_calc == "stp":  # step = ( max - min ) / count
+        if not san_cnt:
+            if san_min and san_max:
+                if a_min == a_max:
+                    set_cnt_zero()
+                    return (0.0,)
+                else:
+                    return ("Error !",
+                            "Need an (int) value for 'Count' or 'Min'='Max' to calculate 'Step'!",
+                            "#ff9999")
+                # end if a_min == a_max
+            # end if san_min and san_max
+        else:  # san_cnt=True
+            if a_cnt == 0:
+                if san_min:
+                    a_max = a_min
+                    window["ast_max_"+elm].update(a_max)
+                    # values["ast_max_"+elm] = a_max # not necessary
+                    msg = "Set 'Max' to " + str(a_max) # MeSsaGe
+                elif san_max:
+                    a_min = a_max
+                    window["ast_min_"+elm].update(a_min)
+                    # values["ast_min_"+elm] = a_min # not necessary
+                    msg = "Set 'Min' to " + str(a_min) # MeSsaGe
+                else:
+                    msg = ""
+                # end if san_min elif san_max
+                return (0.0, msg, "grey")
+            else:  # a_cnt != 0
+                if not san_min:
+                    return ("Error !",
+                            "Need (float) value for 'Min' to calculate 'Step'!",
+                            "#ff9999")
+                elif not san_max:
+                    return ("Error !",
+                            "Need (float) value for 'Max' to calculate 'Step'!",
+                            "#ff9999")
+                else:  # san_min=True and san_max=True
+                    return ( (a_max - a_min) / a_cnt,
+                             "Successfully calculated 'Step'.",
+                             "#99ff99")
+                # end if not san_min elif not san_max else
+            # end if a_cnt == 0 else
+        # end if not san_cnt else
+    elif to_calc == "cnt":  # count = ( max - min ) / step # similar to before but stp <-> cnt
+        if not san_stp:
+            if san_min and san_max:
+                if a_min == a_max:
+                    # set_stp_zero() : # useful because not san_stp
+                    a_stp = 0.0
+                    window["ast_cnt_"+elm].update(a_stp)
+                    values["ast_cnt_"+elm] = a_stp  # for total_count
+                    # end set_stp_zero()
+                    return (0.0,
+                            "Set 'Step' to " + str(a_stp),
+                            "grey")
+                else:
+                    return ("Error !",
+                            "Need an (int) value for 'Step' or 'Min'='Max' to calculate 'Count'!",
+                            "#ff9999")
+                # end if a_min == a_max
+            # end if san_min and san_max
+        else:  # san_stp=True
+            if a_stp == 0:
+                if san_min:
+                    a_max = a_min
+                    window["ast_max_"+elm].update(a_max)
+                    # values["ast_max_"+elm] = a_max # not necessary
+                    msg = "Set 'Max' to " + str(a_max) # MeSsaGe
+                elif san_max:
+                    a_min = a_max
+                    window["ast_min_"+elm].update(a_min)
+                    # values["ast_min_"+elm] = a_min # not necessary
+                    msg = "Set 'Min' to " + str(a_min) # MeSsaGe
+                # end if san_min elif san_max
+                return (0.0, msg, "grey")
+            else:  # a_stp != 0
+                if not san_min:
+                    return ("Error !",
+                            "Need (float) value for 'Min' to calculate 'Count'!",
+                            "#ff9999")
+                elif not san_max:
+                    return ("Error !",
+                            "Need (float) value for 'Max' to calculate 'Count'!",
+                            "#ff9999")
+                else:  # san_min=True and san_max=True
+                    reslt = (a_max - a_min) / a_stp + iv_delta
+                    window["ast_cnt_"+elm].update(reslt)  # for total_count
+                    return (reslt,
+                            "Successfully calculated 'Count'.",
+                            "#99ff99")
+                # end if not san_min elif not san_max else
+            # end if a_stp == 0 else
+        # end if not san_stp else
+    # end if to_calc == ...
+    #
+    # To Do: z.B. cnt = 0 berechnet (weil min = max) dann stp bleibt zwar wert
+    #             aber ausgrauen, wenn nicht == 0.0
+    #
+    # incl., excl.
+    # -------+---------+-----------------+
+    #       |         |      Count      |
+    # Werte | Interv. +-----+-----+-----+
+    #       |         | i i | i e | e e |
+    # -------+---------+-----+-----+-----+
+    #     5 |       4 |   5 |   4 |   3 |
+    # -------+---------+-----+-----+-----+
+    #     4 |       3 |   4 |   3 |   2 |
+    # -------+---------+-----+-----+-----+
+    #     3 |       2 |   3 |   2 |   1 |
+    # -------+---------+-----+-----+-----+
+    #     2 |       1 |   2 |   1 | * 0 |
+    # -------+---------+-----+-----+-----+
+    #     1 |       0 |   1 | * 0 | *-1 |
+    # -------+---------+-----+-----+-----+
+#def san_check_and_calc()
 
 def create_range(elm): # float range
     return np.arange(float(values["ast_min_"+elm]),
                      float(values["ast_max_"+elm])
-                    +float(values["ast_step_"+elm]),
-                     float(values["ast_step_"+elm]))
+                    +float(values["ast_stp_"+elm]),
+                     float(values["ast_stp_"+elm]))
+
+def name_coords(ct): # Coord Type
+    if ct == "0":
+        print("ct-0 branch")
+        window["coord_1"].update("a   [AU]")
+        window["coord_1"].SetTooltip(" Semi-major axis ")
+        window["coord_2"].update(" e")
+        window["coord_2"].SetTooltip(" Eccentricity ")
+        window["coord_3"].update(" i   [ ° ] ")
+        window["coord_3"].SetTooltip(" Inclination ")
+        window["coord_4"].update(" \u03c9   [ ° ] ")
+        window["coord_4"].SetTooltip(" Argument of periapsis ")
+        window["coord_5"].update(" \u03a9   [ ° ] ")
+        window["coord_5"].SetTooltip(" Longitude of the ascending node ")
+        window["coord_6"].update(" M   [ ° ] ")
+        window["coord_6"].SetTooltip(" Mean anomaly ")
+        # \u03c9 = \N{greek small letter omega}
+        # \u03a9 = \N{greek capital letter omega}
+        # \N{SUBSCRIPT two}
+    elif ct == "1" or ct == "2":
+        print("ct-1|2 branch")
+        window["coord_1"].update(" x   [?]")  # ,background_color="green")
+        window["coord_1"].SetTooltip(" x Position ")
+        window["coord_2"].update(" y   [?]")
+        window["coord_2"].SetTooltip(" y Position ")
+        window["coord_3"].update(" z   [?]")
+        window["coord_3"].SetTooltip(" z Position ")
+        window["coord_4"].update(" v_x   [?]")
+        window["coord_4"].SetTooltip(" x Velocity ")
+        window["coord_5"].update(" v_y   [?]")
+        window["coord_5"].SetTooltip(" y Velocity ")
+        window["coord_6"].update(" v_z   [?]")
+        window["coord_6"].SetTooltip(" z Velocity ")
+    else:
+        print("ct-no branch")
 
 layout = create_layout()
 layout.append([sg.StatusBar("", (80, 0), key="status", tooltip=" StatusBar ")]) # doppelt!!!
@@ -310,6 +567,7 @@ while True:
         layout2 = create_layout2()
         #print(layout2)
         window = sg.Window('N-Body Lie Integrator', location=loc).Layout(layout2).finalize()
+        name_coords("0")
         # finalize(), damit recalcen kann
         recalc_total() # damit schon anfangs Zahl existiert
         # Problem: dict values ist noch nicht befüllt!
@@ -405,39 +663,7 @@ while True:
     elif event == "coord_type":
         ct = values["coord_type"][0] # 1st letter
         print("ct :", ct)
-        if ct == "0":
-            print("ct-0 branch")
-            window["coord_1"].update("a   [AU]")
-            window["coord_1"].SetTooltip(" Semi-major axis ")
-            window["coord_2"].update(" e")
-            window["coord_2"].SetTooltip(" Eccentricity ")
-            window["coord_3"].update(" i   [ ° ] ")
-            window["coord_3"].SetTooltip(" Inclination ")
-            window["coord_4"].update(" \u03c9   [ ° ] ")
-            window["coord_4"].SetTooltip(" Argument of periapsis ")
-            window["coord_5"].update(" \u03a9   [ ° ] ")
-            window["coord_5"].SetTooltip(" Longitude of the ascending node ")
-            window["coord_6"].update(" M   [ ° ] ")
-            window["coord_6"].SetTooltip(" Mean anomaly ")
-            # \u03c9 = \N{greek small letter omega}
-            # \u03a9 = \N{greek capital letter omega}
-            # \N{SUBSCRIPT two}
-        elif ct == "1" or ct == "2":
-            print("ct-1|2 branch")
-            window["coord_1"].update(" x   [?]") #,background_color="green")
-            window["coord_1"].SetTooltip(" x Position ")
-            window["coord_2"].update(" y   [?]")
-            window["coord_2"].SetTooltip(" y Position ")
-            window["coord_3"].update(" z   [?]")
-            window["coord_3"].SetTooltip(" z Position ")
-            window["coord_4"].update(" v_x   [?]")
-            window["coord_4"].SetTooltip(" x Velocity ")
-            window["coord_5"].update(" v_y   [?]")
-            window["coord_5"].SetTooltip(" y Velocity ")
-            window["coord_6"].update(" v_z   [?]")
-            window["coord_6"].SetTooltip(" z Velocity ")
-        else:
-            print("ct-no branch")
+        name_coords(ct)
     elif "_copy" in event: # COPY values from "regular" planet to X-planet
         sourceplanet = values[event] # zB Jupiter
         targetrow = event[:2] # zB x2
@@ -451,147 +677,44 @@ while True:
         if delta_iv == 0: # nothing to do
             continue # while-loop
         delta_iv = 0
-        # recalc: subtract 1 from asteroids-amounts
+        # recalc: subtract 1 from asteroids-counts
         for elm in elements:
-            window["ast_amount_" + elm].update(float(values["ast_amount_" + elm]) -1 )
+            window["ast_cnt_" + elm].update(float(values["ast_cnt_" + elm]) -1 )
         print("iv_i geklickt")
     elif event == "iv_v":
         if delta_iv == 1: # nothing to do
             continue # while-loop
         delta_iv = 1
-        # recalc: add 1 to asteroids-amounts
+        # recalc: add 1 to asteroids-counts
         for elm in elements:
-            window["ast_amount_" + elm].update(float(values["ast_amount_" + elm]) +1 )
+            window["ast_cnt_" + elm].update(float(values["ast_cnt_" + elm]) +1 )
         print("iv_v geklickt")
     elif "ast_" in event:
         print("Asteroiden-Zeux, event:", event)
-        elm = event[-1] # ELeMent
+        elm     = event[-1]  # last letter: ELeMent
         to_calc = event[4:7] # Buchstaben 4, 5 und 6; 7 ist nicht mehr dabei!
-        if to_calc == "ste":
-            to_calc = "step"
-        elif to_calc == "amo":
-            to_calc = "amount"
+        #if to_calc == "ste":
+        #    to_calc = "step"
+        #elif to_calc == "amo":
+        #    to_calc = "amount"
         if "_calc_" in event:
             #delta_iv = values["iv_v"] # 1 wenn angeklickt, sonst 0
             print("calc: delta_iv:", delta_iv)
-            if to_calc != "min":
-                try:
-                    a_min = float(values["ast_min_"+elm])
-                except:
-                    sg.Popup("Error",custom_text="Min-Value is not a float!",no_titlebar=True)
-                    continue # while True, window.read()
-            if to_calc != "max":
-                try:
-                    a_max = float(values["ast_max_"+elm])
-                except:
-                    sg.Popup("Error",custom_text="Max-Value is not a float!",no_titlebar=True)
-                    continue  # while True, window.read()
-            if to_calc != "step":
-                try:
-                    a_stp = float(values["ast_step_"+elm])
-                except:
-                    sg.Popup("Error",custom_text="Step-Value is not a float!",no_titlebar=True)
-                    continue  # while True, window.read()
-            if to_calc != "amount":
-                try:
-                    a_amo = float(values["ast_amount_"+elm]) - delta_iv # = intervals, not values
-                except:
-                    sg.Popup("Error", custom_text="Amount-Value is not an integer!", no_titlebar=True)
-                    continue  # while True, window.read()
-                if int(a_amo) == a_amo:
-                      a_amo = int(a_amo)
-                else:
-                    sg.Popup("Error",custom_text="Amount-Value is not an integer!", no_titlebar=True)
-                    continue  # while True, window.read()
-
-            # correction, "side effects":
-            #if   ( ( to_calc == "step"        and a_min == a_max ) or \
-            #       ( to_calc in ["min","max"] and a_stp == 0.0 ) ) and a_amo != 0:
-            #    a_amo = delta_iv
-            #    window["ast_amount_" + elm].update(a_amo)
-            #    values["ast_amount_" + elm] = a_amo  # sync values & window
-            #    window["status"].update(" Asteroids: " + elm + ": Amount set to " + str(a_amo) + " ")
-            #elif ( ( to_calc == "amount"      and a_min == a_max ) or \
-            #       ( to_calc in ["min","max"] and a_amo == 0   ) ) and a_stp != 0.0:
-            #    a_step = 0.0
-            #    window["ast_step_" + elm].update(a_step)
-            #    values["ast_step_" + elm] = a_step  # sync values & window
-            #    window["status"].update(" Asteroids: " + elm + ": Step set to " + str(a_step) + " ")
-
-            if to_calc == "min": # calculate MINimum (a_min)
-                try:
-                    result = a_max - a_amo * a_stp
-                except:
-                    result = "Error!"
-            elif to_calc == "max": # calculate MAXimum (a_max)
-                try:
-                    result = a_amo * a_stp + a_min
-                except:
-                    result = "Error!"
-            elif to_calc == "step": # calculate STEPwidth (a_stp)
-                if a_amo == 0:
-                    if a_max == a_min:
-                        result = 0.0
-                    else:
-                        result = "Error!"
-                        window["status"].update(" Division by zero! ")
-                else:
-                    try:
-                        result = ( a_max - a_min ) / a_amo
-                    except:
-                        result = "Error!"
-                        window["status"].update(" Unknown error ")
-            elif to_calc == "amount": # calculate AMOUNT (a_amo)
-                if a_stp == 0:
-                    if a_max == a_min:
-                        result = 0.0
-                    else:
-                        result = "Error!"
-                        window["status"].update(" Division by zero! ")
-                else:
-                    try:
-                        result = float( ( a_max - a_min ) / a_stp + delta_iv )
-                    except:
-                        result = "Error!"
-                        window["status"].update(" Unknown error ")
-            #</ if to_calc == ...>
-
-            # correction, "side effects":
-            #            |----------- calculating ("to_calc") ------------|
-            # circumst.  |   MIN   |   MAX   |     STP    |     AMO    |
-            # -----------+---------+---------+------------+------------+
-            # MIN == MAX |         |         | amo -> 0   | stp -> 0   |
-            # -----------+---------+---------+------------+------------+
-            # STEP == 0  | amo -> 0          |            | max -> min |
-            # -----------+---------+---------+------------+------------+
-            # AMO == 0   | stp -> 0          | max -> min |            |
-            # -----------+---------+---------+------------+------------+
-            # ggf. amount korrigieren, damit total_amount richtig
-            if   ( ( to_calc == "step"        and a_min == a_max ) or \
-                   ( to_calc in ["min","max"] and a_stp == 0.0 ) ) and a_amo != 0:
-                a_amo = delta_iv
-                window["ast_amount_" + elm].update(a_amo)
-                values["ast_amount_" + elm] = a_amo  # sync values & window
-                window["status"].update(" Asteroids: " + elm + ": Amount set to " + str(a_amo) + " ")
-            # derzeit Error bei:
-            # step = 0, calc. amount
-            # amount = 0, calc. step
-            #
-            #if   ( ( to_calc == "step"   and a_amo == 0   ) or \
-            #       ( to_calc == "amount" and a_stp == 0.0 ) ) and a_min != a_max:
-            #    window["ast_max_" + elm].update(a_min)
-            #    values["ast_max_" + elm] = a_min  # sync values & window
-            #    window["status"].update(" Asteroids: " + elm + ": Max set to Min ")
-
+            result_list = san_check_and_calc(delta_iv)
+            result = result_list[0]
             window["ast_"+to_calc+"_"+elm].update(result)
-            values["ast_"+to_calc+"_"+elm] = result
+            values["ast_"+to_calc+"_"+elm] = result # esp. for "cnt"
+            if len(result_list) > 1:
+                window["status"].update(" "+result_list[1]+" ") # message
+            if len(result_list) > 2:
+                window["status"].update(text_color = result_list[2])
             #--- disable calc buttons until new manual change
-            #for tc in ("min", "max", "step", "amount"): # tc = to_calc
+            #for tc in ("min", "max", "stp", "cnt"): # tc = to_calc
             #    k = "ast_" + tc + "_calc_" + elm # key
             #    window[k].update(disabled=True)
 
             #------- calculating total count of asteroids
-            if to_calc == "amount" and result != "Error!":
+            if to_calc == "cnt" and result != "Error!":
                 recalc_total()
                 if result != int(result):
                     window["ast_" + to_calc + "_" + elm].update(background_color="#ffcccc")
@@ -606,12 +729,12 @@ while True:
             jetzt kontrollieren ob spalte erlaubte Werte liefert'''
 
             #--- enable calc buttons because of new manual change
-            for tc in ("min", "max", "step", "amount"):
+            for tc in ("min", "max", "stp", "cnt"):
                 k = "ast_" +tc + "_calc_" + elm # key
                 window[k].update(disabled=False)
 
             ### elm = event[-1]
-            if "_amount_" in event: # and "_calc_" not in event:
+            if "_cnt_" in event: # and "_calc_" not in event:
                 """ausführen nur bei händischer wertänderung"""
                 print("recalculating....(because manual change event)")
                 # farb-check. int("1.0") ergibt error, float("1.0") ist erlaubt
@@ -626,20 +749,20 @@ while True:
                     window["status"].update(" Amount must be an integer! ")
                 else:
                     window[event].update(background_color="white")
-                #  total amount of asteroids ausrechnen
+                #  total count of asteroids ausrechnen
                 recalc_total()
                 #result = 1
                 #for elm in elements:
                 #    try:
-                #        result *= float(values["ast_amount_" + elm])
+                #        result *= float(values["ast_cnt_" + elm])
                 #    except:
-                #        print("error calculating amount "+elm)
+                #        print("error calculating count "+elm)
                 #        break
                 #
                 #else:  # schleife lief durch ohne ein einziges break vollständig
                 #    print("recalculating without errors. Result=", result)
                 #    window["ast_total"].update("Total: {}".format(result))
-            #<if "_amount_" in event: # and "_calc_" not in event:>
+            #<if "_cnt_" in event: # and "_calc_" not in event:>
         # <if "_calc_" in event:>
     # end if elif event
 print("Bye")
