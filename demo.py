@@ -1,13 +1,21 @@
 #!/usr/bin/env python
 '''
 GUI for creating input-file for Solar-System simulating program (N-body)
+
+??? TO DO :
+roter Hintergrund bei Count nur wenn float, nicht bei Error oder sonst;
+oder bei allen rot, wenn nicht san_...
 '''
+
+
 
 import PySimpleGUI as sg
 import os
 import pickle
 import numpy as np
 #import random
+
+CALC_ERR_MSG = "Error !\a" # CALCulation ERRor MeSsaGe
 
 class Planet():
     ''' Planet of the Solar system ... '''
@@ -262,9 +270,6 @@ def create_layout2():
                                     size=(8,0),pad=(0,0),
                                     enable_events=True),
                                     sg.Button("*",key="ast_cnt_calc_"+elm,tooltip=" Calculate ",pad=(0,0))]]))
-        row.append(sg.Text(" \u03a3: ",tooltip=" Total count of asteroids ",pad=(0,0),background_color="grey"))
-        # u03a3 = \N{greek capital letter sigma}
-        row.append(sg.Text(" ? ",key="ast_total",tooltip=" Total count of asteroids ",size=(10,0),pad=(0,0),background_color="grey"))
         layout2.append(row)
         #row.append(sg.Column(layout=[[
         #    sg.Radio(text="stepsize", group_id="radio_"+elm, default=False, key ="radio_"+elm+"_steps" )],
@@ -275,17 +280,35 @@ def create_layout2():
         #--- asteroids count ------
         # ------ random ----
     # end for elm
-    layout2.append([sg.StatusBar("", (80, 0), key="status", tooltip=" StatusBar ")]) # doppelt!!!
+    layout2.append(
+        [sg.StatusBar("", (101, 0), key="status", tooltip=" StatusBar ", background_color="grey"), # doppelt!!!
+         sg.Text(" \u03a3: ", tooltip=" Total count of asteroids ", pad=((120,0), 0), background_color="grey"),
+                  # u03a3 = \N{greek capital letter sigma}
+         sg.Text(" ? ", key="ast_total", tooltip=" Total count of asteroids ", size=(10, 0), pad=(0, 0),
+                 background_color="grey")])
     return layout2
 #end def create_layout2()
 
 def set_cnt_zero():
     a_cnt = delta_iv  # 0 (or 1)
-    window["ast_cnt_"+elm].update(a_cnt)
+    window["ast_cnt_"+elm].update(a_cnt,
+                                  background_color="white") # in case color was red
     values["ast_cnt_"+elm] = a_cnt  # for total_count
     window["status"].update(" Set 'Count' to " + str(a_cnt),
                             background_color="grey")
 # end def set_cnt_zero()
+
+def try_2_int(x): # TRY to 'convert' x (usually Asteroid_CouNT) to INTeger
+    try:
+        f = float(x) # float because int("1.0") does not work,
+    except:          #     but int(float("1.0")) does
+        return x
+    i = int(f)
+    if i == f:
+        return i
+    else:
+        return f
+#end def try_2_int()
 
 def san_check_and_calc(iv_delta):
     #sanity_check:
@@ -307,61 +330,67 @@ def san_check_and_calc(iv_delta):
     except:
         san_stp = False
     print("san_stp:", san_stp)
-    try: # hier fortsetzen !!!???
-        print('values["ast_cnt_'+elm+'"] :',
-               values["ast_cnt_"+elm   ] )
-        a_cnt = int(values["ast_cnt_" + elm])
+    print('values["ast_cnt_' + elm + '"] :',
+          values["ast_cnt_" + elm])
+    try: # 1st try float
+        a_cnt = float(values["ast_cnt_" + elm])
         san_cnt = True
     except:
         san_cnt = False
-    print("san_cnt:", san_cnt)
+    print("san_cnt:", san_cnt, " (float)")
+    try: # then finally int
+        a_cnt = int(a_cnt)
+        san_cnt = True
+    except:
+        san_cnt = False
+    print("san_cnt:", san_cnt, " (int)")
     #end sanity check
+    #--- start calculation:
     # basic equation: max - min = step * count
     if to_calc == "min":  # min = max - step * count
         if not san_max:
-            return ("Error !",
-                    "Need float value for 'Max' to calculate 'Min'!")
+            return (CALC_ERR_MSG,
+                    "Need value for 'Max' to calculate 'Min'!")
         else:
             if not san_stp:
                 if not san_cnt:
-                    return ("Error !",
+                    return (CALC_ERR_MSG,
                             "Need either one zero value in 'Step' or 'Count', or a float in 'Step' and an int in 'Count' to calculate 'Min'!")
                 elif a_cnt == 0:
                     return (a_max,)
                 else:
-                    return ("Error !",
-                            "Need also a float value in 'Step' to calculate 'Min'!")
+                    return (CALC_ERR_MSG,
+                            "Need also a value in 'Step' to calculate 'Min'!")
                 # end if not san_cnt
             else:  # san_stp = True
                 if a_stp == 0.0:
-                    return (a_max,)
                     set_cnt_zero()
+                    return (a_max,)
                 else:
                     if not san_cnt:
-                        return ("Error !",
+                        return (CALC_ERR_MSG,
                                 "Need also a int value in 'Count' to calculate 'Min'!")
                     else:
-                        return (a_max - a_stp * a_cnt,
-                                "Successfully calculated 'Min'.",
-                                "#99ff99")
+                        return (a_max - a_stp * a_cnt,)
+                                #"Successfully calculated 'Min'.")
                     # end if not san_cnt
                 # end if a_stp == 0.0
             # end if not san_stp
         # end if not san_max
     elif to_calc == "max":  # max = min + step * count # similar to before but min <-> max
         if not san_min:
-            return ("Error !",
-                    "Need float value for 'Min' to calculate 'Max'!")
+            return (CALC_ERR_MSG,
+                    "Need value for 'Min' to calculate 'Max'!")
         else:
             if not san_stp:
                 if not san_cnt:
-                    return ("Error !",
+                    return (CALC_ERR_MSG,
                             "Need either one zero value in 'Step' or 'Count', or a float in 'Step' and an int in 'Count' to calculate 'Max'!")
                 elif a_cnt == 0:
                     return (a_min,)
                 else:
-                    return ("Error !",
-                            "Need also a float value in 'Step' to calculate 'Max'!")
+                    return (CALC_ERR_MSG,
+                            "Need also a value in 'Step' to calculate 'Max'!")
                 # end if not san_cnt
             else:  # san_stp = True
                 if a_stp == 0.0:
@@ -369,12 +398,11 @@ def san_check_and_calc(iv_delta):
                     return (a_min,)
                 else:
                     if not san_cnt:
-                        return ("Error !",
+                        return (CALC_ERR_MSG,
                                 "Need also a int value in 'Count' to calculate 'Max'!")
                     else:
-                        return (a_min + a_stp * a_cnt,
-                                "Successfully calculated 'Max'.",
-                                "#99ff99")
+                        return (a_min + a_stp * a_cnt,)
+                                #"Successfully calculated 'Max'.")
                     # end if not san_cnt
                 # end if a_stp == 0.0
             # end if not san_stp
@@ -386,40 +414,39 @@ def san_check_and_calc(iv_delta):
                     set_cnt_zero()
                     return (0.0,)
                 else:
-                    return ("Error !",
-                            "Need an (int) value for 'Count' or 'Min'='Max' to calculate 'Step'!",
-                            "#ff9999")
+                    return (CALC_ERR_MSG,
+                            "Need an (int) value for 'Count' or 'Min'='Max' to calculate 'Step'!")
                 # end if a_min == a_max
+            else:
+                return (CALC_ERR_MSG,
+                        "Too less values given for calculating 'Step'!")
             # end if san_min and san_max
         else:  # san_cnt=True
             if a_cnt == 0:
                 if san_min:
                     a_max = a_min
                     window["ast_max_"+elm].update(a_max)
-                    # values["ast_max_"+elm] = a_max # not necessary
-                    msg = "Set 'Max' to " + str(a_max) # MeSsaGe
+                    msg = f"Set 'Max' to {a_max} (= 'Min')" # MeSsaGe
                 elif san_max:
                     a_min = a_max
                     window["ast_min_"+elm].update(a_min)
-                    # values["ast_min_"+elm] = a_min # not necessary
-                    msg = "Set 'Min' to " + str(a_min) # MeSsaGe
-                else:
-                    msg = ""
+                    msg = "Set 'Min' to %s (= 'Max')" % str(a_min) # MeSsaGe
+                else: # san_min=False & san_max=False
+                    msg = "Missing 'Min' and 'Max' might cause problems!" # ???
                 # end if san_min elif san_max
-                return (0.0, msg, "grey")
+                return (0.0, msg)
             else:  # a_cnt != 0
                 if not san_min:
-                    return ("Error !",
-                            "Need (float) value for 'Min' to calculate 'Step'!",
-                            "#ff9999")
+                    return (CALC_ERR_MSG,
+                            "Need value for 'Min' to calculate 'Step'!")
                 elif not san_max:
-                    return ("Error !",
-                            "Need (float) value for 'Max' to calculate 'Step'!",
-                            "#ff9999")
+                    return (CALC_ERR_MSG,
+                            "Need value for 'Max' to calculate 'Step'!")
                 else:  # san_min=True and san_max=True
-                    return ( (a_max - a_min) / a_cnt,
-                             "Successfully calculated 'Step'.",
-                             "#99ff99")
+                    if a_min == a_max:
+                        set_cnt_zero()
+                    return ( (a_max - a_min) / a_cnt,)
+                             #"Successfully calculated 'Step'.")
                 # end if not san_min elif not san_max else
             # end if a_cnt == 0 else
         # end if not san_cnt else
@@ -432,44 +459,39 @@ def san_check_and_calc(iv_delta):
                     window["ast_cnt_"+elm].update(a_stp)
                     values["ast_cnt_"+elm] = a_stp  # for total_count
                     # end set_stp_zero()
-                    return (0.0,
-                            "Set 'Step' to " + str(a_stp),
-                            "grey")
+                    return (0, "Set 'Step' to " + str(a_stp))
                 else:
-                    return ("Error !",
-                            "Need an (int) value for 'Step' or 'Min'='Max' to calculate 'Count'!",
-                            "#ff9999")
+                    return (CALC_ERR_MSG,
+                            "Need an (int) value for 'Step' or 'Min'='Max' to calculate 'Count'!")
                 # end if a_min == a_max
+            else:
+                return (CALC_ERR_MSG,
+                        "Too less values given for calculating 'Count'!")
             # end if san_min and san_max
         else:  # san_stp=True
-            if a_stp == 0:
+            if a_stp == 0: # 0.0
                 if san_min:
                     a_max = a_min
                     window["ast_max_"+elm].update(a_max)
-                    # values["ast_max_"+elm] = a_max # not necessary
-                    msg = "Set 'Max' to " + str(a_max) # MeSsaGe
+                    return (0, "Set 'Max' to " + str(a_max))
                 elif san_max:
                     a_min = a_max
                     window["ast_min_"+elm].update(a_min)
-                    # values["ast_min_"+elm] = a_min # not necessary
-                    msg = "Set 'Min' to " + str(a_min) # MeSsaGe
+                    return (0, "Set 'Min' to " + str(a_min))
+                else: # neither san_min nor san_max
+                    return (CALC_ERR_MSG,
+                            "Need at least also 'Min' or 'Max' to calculate 'Count'!")
                 # end if san_min elif san_max
-                return (0.0, msg, "grey")
             else:  # a_stp != 0
                 if not san_min:
-                    return ("Error !",
-                            "Need (float) value for 'Min' to calculate 'Count'!",
-                            "#ff9999")
+                    return (CALC_ERR_MSG,
+                            "Need (float) value for 'Min' to calculate 'Count'!")
                 elif not san_max:
-                    return ("Error !",
-                            "Need (float) value for 'Max' to calculate 'Count'!",
-                            "#ff9999")
+                    return (CALC_ERR_MSG,
+                            "Need (float) value for 'Max' to calculate 'Count'!")
                 else:  # san_min=True and san_max=True
-                    reslt = (a_max - a_min) / a_stp + iv_delta
-                    window["ast_cnt_"+elm].update(reslt)  # for total_count
-                    return (reslt,
-                            "Successfully calculated 'Count'.",
-                            "#99ff99")
+                    return (try_2_int( (a_max - a_min) / a_stp + iv_delta ),)
+                            #"Successfully calculated 'Count'.")
                 # end if not san_min elif not san_max else
             # end if a_stp == 0 else
         # end if not san_stp else
@@ -501,6 +523,7 @@ def create_range(elm): # float range
                      float(values["ast_max_"+elm])
                     +float(values["ast_stp_"+elm]),
                      float(values["ast_stp_"+elm]))
+#end def create_range(elm)
 
 def name_coords(ct): # Coord Type
     if ct == "0":
@@ -536,9 +559,11 @@ def name_coords(ct): # Coord Type
         window["coord_6"].SetTooltip(" z Velocity ")
     else:
         print("ct-no branch")
+#end def name_coords(ct)
 
 layout = create_layout()
-layout.append([sg.StatusBar("", (80, 0), key="status", tooltip=" StatusBar ")]) # doppelt!!!
+layout.append([sg.StatusBar(" Please create your Soloar System!", (93, 0), key="status", tooltip=" StatusBar ",
+                            background_color="grey")]) # doppelt!!!
 
 loc = (0, 0)
 window = sg.Window('N-Body Lie (1)', location=loc).Layout(layout)
@@ -693,32 +718,32 @@ while True:
         print("Asteroiden-Zeux, event:", event)
         elm     = event[-1]  # last letter: ELeMent
         to_calc = event[4:7] # Buchstaben 4, 5 und 6; 7 ist nicht mehr dabei!
-        #if to_calc == "ste":
-        #    to_calc = "step"
-        #elif to_calc == "amo":
-        #    to_calc = "amount"
+        #if to_calc == "ste": to_calc = "step"
+        #elif to_calc == "amo": to_calc = "amount"
         if "_calc_" in event:
             #delta_iv = values["iv_v"] # 1 wenn angeklickt, sonst 0
             print("calc: delta_iv:", delta_iv)
-            result_list = san_check_and_calc(delta_iv)
-            result = result_list[0]
+            result = san_check_and_calc(delta_iv) # list with 1 or 2 (status_msg) elements
+            if len(result) > 1:
+                window["status"].update(
+                    " "+result[1]+" ",
+                    text_color = "red" if result[0] == CALC_ERR_MSG else "white")
+            result = result[0]
             window["ast_"+to_calc+"_"+elm].update(result)
             values["ast_"+to_calc+"_"+elm] = result # esp. for "cnt"
-            if len(result_list) > 1:
-                window["status"].update(" "+result_list[1]+" ") # message
-            if len(result_list) > 2:
-                window["status"].update(text_color = result_list[2])
+            #else white ???
+                # if len(result) > 2: window["status"].update(text_color = result[2])
             #--- disable calc buttons until new manual change
             #for tc in ("min", "max", "stp", "cnt"): # tc = to_calc
-            #    k = "ast_" + tc + "_calc_" + elm # key
+            #    k = "ast_" + tc + "_calc_" + elm # k = key
             #    window[k].update(disabled=True)
-
-            #------- calculating total count of asteroids
-            if to_calc == "cnt" and result != "Error!":
+            #--- calculating total count of asteroids
+            if to_calc == "cnt" and result != CALC_ERR_MSG:
+                window["ast_cnt_" + elm].update(result)  # for total_count
                 recalc_total()
                 if result != int(result):
                     window["ast_" + to_calc + "_" + elm].update(background_color="#ffcccc")
-                    window["status"].update(" Amount must be a (" \
+                    window["status"].update(" Count must be a (" \
                                             + ("positive" if delta_iv else "non-negative") \
                                             +") integer! ")
                 else:
@@ -746,7 +771,7 @@ while True:
                 print(red)
                 if red:
                     window[event].update(background_color="#ffcccc")
-                    window["status"].update(" Amount must be an integer! ")
+                    window["status"].update(" Count must be an integer! ")
                 else:
                     window[event].update(background_color="white")
                 #  total count of asteroids ausrechnen
