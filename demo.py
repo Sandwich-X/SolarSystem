@@ -7,8 +7,6 @@ roter Hintergrund bei Count nur wenn float, nicht bei Error oder sonst;
 oder bei allen rot, wenn nicht san_...
 '''
 
-
-
 import PySimpleGUI as sg
 import os
 import pickle
@@ -35,6 +33,7 @@ class Planet():
 #end class Planet()
 
 elements = ["a", "e", "i", "o", "O", "M", "m"] # orbital elements names # __dict__ ?
+#elements = "aeioOMm"
 x_elm = {}
 for e in elements:
     x_elm[e] = 0.0
@@ -47,7 +46,6 @@ form_string = {"a" : "{:13.10f} ",
                "m" : "{:19.13e}",
               }
 
-# or: elements ="aeioOMm"
 default_planets = {}
 extra_planets = {}
 # for planetname in ["Sun", "Mercury", "Venus", "Earth", "Mars", "Jupiter", "Saturn", "Uranus", "Neptune", "Pluto"]:
@@ -90,8 +88,9 @@ def recalc_total():
         except:
             #print("values[ast_cnt_" + e, "] :", values["ast_cnt_" + e] )
             #print("delta_iv:", delta_iv)
+            #window["status"].update ... ??? überschreibt vorherige Status-Meldung
             print("error calculating count " + elm)
-            window["ast_total"].update("5^6 ?") # u03a3 = \N{greek capital letter sigma}
+            window["ast_total"].update("?")
             break
     else:  # schleife lief vollständig durch ohne ein einziges break
         print("recalculating without errors. Result =", sum)
@@ -131,7 +130,7 @@ def create_layout(checks=allchecks, l2 = False): # l2: Layout2 ("Create")
     return [
         [sg.Text('Solar System N-Body Integrator', size=(30, 1))],
         create_cols(checks),
-        [sg.Text("Number of extra planets:"),
+        [sg.Text("Number of eXtra planets:"),
          sg.Spin(values=list(range(10)), initial_value=3, key="extra", size=(3,0)),
 	     sg.Text(""),
          sg.Checkbox(text="Asteroids", key="asteroids", default=True, tooltip=" Check for including asteroids (have zero mass) "),
@@ -173,10 +172,10 @@ def create_layout2():
     # print("checks =", checks)
     # create a COMPLETE NEW LAYOUT by function,
     #   do not re-use the old one by variable
-    # ??? list.copy() ???
+    # ??? list.copy() ??? deepcopy !!!
     layout2 = create_layout(checks=newchecks, l2=True)
     sz = (14,1)
-    row = [sg.Text(" Name", background_color="grey", size=(12,1)),
+    row = [sg.Text(" Name", background_color="grey", size=(10,1)),
            #sg.Text("", size=(8,1)),
            sg.Combo(values=["0: ELE ", "1: HEL ", "2: BAR "],
                     default_value="0: ELE ",
@@ -188,7 +187,7 @@ def create_layout2():
                     size=(6,1), enable_events=True)]
     for i in range(1,7): # 1, ..., 6
         row.append(sg.Text(key="coord_"+str(i), background_color="grey", size=sz))
-    row.append(sg.Text(" m   [ m_Sol ]"  , tooltip=" Mass ", background_color="grey", size=sz))
+    row.append(sg.Text(" m   [ m_Sol ]"  , tooltip=" Mass   [Solar Mass]", background_color="grey", size=sz))
     layout2.append(row)
     extra_planets = {}
     for i in range(values["extra"]):
@@ -198,12 +197,12 @@ def create_layout2():
             row = []
             # "natural" planet rows get only name as first column,
             # "extra" planet rows get name and a combofield to copy values
-            row.append(sg.Text(p.name, size=(12,0)))
-            if p.name[0] == "X":
-                row.append(sg.Combo(values=[n for n in list(default_planets.keys())+list(extra_planets.keys()) if (n != "Sun" and n!=p.name)],
+            row.append(sg.Text(p.name, size=(10,0)))
+            if p.name[0] == "X": # first letter of planet name = "X"?
+                row.append(sg.Combo(values=[n for n in list(default_planets.keys())+list(extra_planets.keys()) if (n != "Sun" and n != p.name)],
                              #default_value = "Earth",
                              key = p.name + "_copy", size=(6,1),
-			     tooltip=" copy from ",
+			                 tooltip=" copy from ",
                              enable_events = True))
             else:
                 row.append(sg.Text("",size=(8,1)))
@@ -220,56 +219,55 @@ def create_layout2():
     #--- asteroids
     if values["asteroids"]:
         #--- asteroids min
-        row = [sg.Text("Asteroids minimum:", size=(22,0))]
+        row = [sg.Text("Asteroids minimum:", size=(20,0))]
         for elm in elements:
-            row.append(sg.InputText(
-                              default_text="0",
-                              key="ast_min_"+elm,
-                              size=(9,0),pad=((4,0),0)))
-            row.append(sg.Button("*", key="ast_min_calc_" + elm,tooltip=" Calculate ",size=(0,0),pad=((1,9),0)))
+            row.append(sg.InputText(default_text="0", key="ast_min_" + elm,
+                                    size=(9,0),pad=((4,0),0)))
+            row.append(sg.Button("*", key="ast_min_calc_" + elm,
+                                 tooltip=" Calculate ",
+                                 size=(0,0), pad=((4,6),0) ) )
         layout2.append(row)
         #--- asteroids include min max
-        row = [sg.Text("Ast. include min,max:", size=(22,0))]
+        row = [sg.Text("Ast. include min,max:", size=(20,0))]
         for i in range(1,7):
             row.append(sg.Checkbox("min",key="ast_min_incl_"+str(i),tooltip=" include Min "+str(i),default=True,pad=(0,0)))
             row.append(sg.Checkbox("max",key="ast_max_incl_"+str(i),tooltip=" include Max "+str(i),default=True,pad=((0,12),0)))
         layout2.append(row)
         #--- asteroids max
-        row = [sg.Text("Asteroids maximum:", size=(22,0))]
+        row = [sg.Text("Asteroids maximum:", size=(20,0))]
         for elm in elements:
-            #row.append(sg.InputText(default_text="0", key="ast_max_" + elm, size=(15, 0)))
-            row.append(sg.Col(pad=(0,0),
-                          layout=[[sg.InputText(
-                              default_text="10",
-                              key="ast_max_" + elm,
-                              size=(8,0), pad=(0,0),
-                              enable_events=True),
-                              sg.Button("*", key="ast_max_calc_" + elm,tooltip=" Calculate ",pad=(0,0))]]))
+            row.append(sg.InputText(default_text="10", key="ast_max_" + elm,
+                                    size=(9,0), pad=((4,0),0)) )
+            row.append(sg.Button("*", key="ast_max_calc_" + elm,
+                                 tooltip=" Calculate ",
+                                 size=(0,0), pad=((4,6),0) ) )
         layout2.append(row)
         #--- asteroids stepsize
-        row = [sg.Text("Asteroids stepsize:", size=(22,0))]
+        row = [sg.Text("Asteroids stepsize:", size=(20,0))]
         for elm in elements:
-            row.append(sg.Col(pad=(0,0),
-                              layout=[[sg.InputText(
-                                    default_text="2",
-                                    key="ast_stp_"+elm,
-                                    size=(8,0),pad=(0,0),
-                                    enable_events=True),
-                                    sg.Button("*",key="ast_stp_calc_"+elm,tooltip=" Calculate ",pad=(0,0))]]))
+            row.append(sg.InputText(default_text="2", key="ast_stp_"+elm,
+                                    size=(9,0), pad=((4,0),0),
+                                    enable_events=True) )
+            row.append(sg.Button("*", key="ast_stp_calc_" + elm,
+                                 tooltip=" Calculate ",
+                                 size=(0,0), pad=((4,6),0) ) )
         layout2.append(row)
         #--- asteroids count
-        row = [sg.Text("Ast. count:", size=(11, 0)),
-               sg.Radio("I",tooltip=" Intervals ",group_id="iv",key="iv_i",enable_events=True,default=True,pad=(0,0)),
-               sg.Radio("V",tooltip=" Values ",   group_id="iv",key="iv_v",enable_events=True,default=False,pad=((0,2),0)),
+        row = [sg.Text("Ast. count:", size=(9,0)),
+               sg.Radio("I", tooltip=" Intervals (not Values)", default=True,
+                        group_id="iv", key="iv_i", pad=(0,0),
+                        enable_events=True),
+               sg.Radio("V", tooltip=" Values (not Intervals)", default=False,
+                        group_id="iv", key="iv_v", pad=((0,2),0),
+                        enable_events=True),
                ]
         for elm in elements:
-            row.append(sg.Col(pad=(0,0),
-                              layout=[[sg.InputText(
-                                    default_text="5",
-                                    key="ast_cnt_"+elm,
-                                    size=(8,0),pad=(0,0),
-                                    enable_events=True),
-                                    sg.Button("*",key="ast_cnt_calc_"+elm,tooltip=" Calculate ",pad=(0,0))]]))
+            row.append(sg.InputText(default_text="5", key="ast_cnt_"+elm,
+                                    size=(9,0), pad=((4,0),0),
+                                    enable_events=True) )
+            row.append(sg.Button("*", key="ast_cnt_calc_" + elm,
+                                 tooltip=" Calculate ",
+                                 size=(0,0), pad=((4,6),0) ) )
         layout2.append(row)
         #row.append(sg.Column(layout=[[
         #    sg.Radio(text="stepsize", group_id="radio_"+elm, default=False, key ="radio_"+elm+"_steps" )],
@@ -281,11 +279,15 @@ def create_layout2():
         # ------ random ----
     # end for elm
     layout2.append(
-        [sg.StatusBar("", (101, 0), key="status", tooltip=" StatusBar ", background_color="grey"), # doppelt!!!
-         sg.Text(" \u03a3: ", tooltip=" Total count of asteroids ", pad=((120,0), 0), background_color="grey"),
-                  # u03a3 = \N{greek capital letter sigma}
-         sg.Text(" ? ", key="ast_total", tooltip=" Total count of asteroids ", size=(10, 0), pad=(0, 0),
-                 background_color="grey")])
+        [sg.StatusBar("", (115,0), key="status", tooltip=" StatusBar ",
+                      background_color="grey"), # doppelt!!!
+         # (101,0) + ((125,0),0) statt (117,0) + ((12,0),0) ist auch eine fkt. Version
+         # d.h. 16 Buchstaben mehr und 113 Pixel weniger: 1 Buchstabe = 7 Pixel
+         sg.Text(" \u03a3: ", tooltip=" Total count of asteroids ",
+                 pad=((12,0),0), background_color="grey"),
+                 # u03a3 = \N{greek capital letter sigma}
+         sg.Text(" ? ", key="ast_total", tooltip=" Total count of asteroids ",
+                 size=(10, 0), pad=(0, 0), background_color="grey")])
     return layout2
 #end def create_layout2()
 
@@ -419,7 +421,7 @@ def san_check_and_calc(iv_delta):
                 # end if a_min == a_max
             else:
                 return (CALC_ERR_MSG,
-                        "Too less values given for calculating 'Step'!")
+                        "Too less (meaningfull) values given for calculating 'Step'!")
             # end if san_min and san_max
         else:  # san_cnt=True
             if a_cnt == 0:
@@ -427,10 +429,14 @@ def san_check_and_calc(iv_delta):
                     a_max = a_min
                     window["ast_max_"+elm].update(a_max)
                     msg = f"Set 'Max' to {a_max} (= 'Min')" # MeSsaGe
+                    #msg = "Set 'Max' to %s (= 'Min')" % str(a_max)
+                    #msg = "Set 'Max' to " + str(a_max) + "( = 'Min')")
                 elif san_max:
                     a_min = a_max
                     window["ast_min_"+elm].update(a_min)
-                    msg = "Set 'Min' to %s (= 'Max')" % str(a_min) # MeSsaGe
+                    msg = f"Set 'Min' to {a_max} (= 'Max')" # MeSsaGe
+                    #msg = "Set 'Min' to %s (= 'Max')" % str(a_min) # MeSsaGe
+                    #msg = "Set 'Min' to " + str(a_min) + "( = 'Max')") # MeSsaGe
                 else: # san_min=False & san_max=False
                     msg = "Missing 'Min' and 'Max' might cause problems!" # ???
                 # end if san_min elif san_max
@@ -466,18 +472,22 @@ def san_check_and_calc(iv_delta):
                 # end if a_min == a_max
             else:
                 return (CALC_ERR_MSG,
-                        "Too less values given for calculating 'Count'!")
+                        "Too less (meaningfull) values given for calculating 'Count'!")
             # end if san_min and san_max
         else:  # san_stp=True
             if a_stp == 0: # 0.0
                 if san_min:
                     a_max = a_min
                     window["ast_max_"+elm].update(a_max)
-                    return (0, "Set 'Max' to " + str(a_max))
+                    return (0, f"Set 'Max' to {a_max} (= 'Min')")
+                    return (0, "Set 'Max' to %s (= 'Min')" % str(a_max) )
+                    #return (0, "Set 'Max' to " + str(a_max) + "( = 'Min')")
                 elif san_max:
                     a_min = a_max
                     window["ast_min_"+elm].update(a_min)
-                    return (0, "Set 'Min' to " + str(a_min))
+                    return (0, f"Set 'Min' to {a_max} (= 'Max')" )
+                    #return (0, "Set 'Min' to %s (= 'Max')" % str(a_min) )
+                    #return (0, "Set 'Min' to " + str(a_min) + "( = 'Max')")
                 else: # neither san_min nor san_max
                     return (CALC_ERR_MSG,
                             "Need at least also 'Min' or 'Max' to calculate 'Count'!")
@@ -485,10 +495,10 @@ def san_check_and_calc(iv_delta):
             else:  # a_stp != 0
                 if not san_min:
                     return (CALC_ERR_MSG,
-                            "Need (float) value for 'Min' to calculate 'Count'!")
+                            "Need value for 'Min' to calculate 'Count'!")
                 elif not san_max:
                     return (CALC_ERR_MSG,
-                            "Need (float) value for 'Max' to calculate 'Count'!")
+                            "Need value for 'Max' to calculate 'Count'!")
                 else:  # san_min=True and san_max=True
                     return (try_2_int( (a_max - a_min) / a_stp + iv_delta ),)
                             #"Successfully calculated 'Count'.")
@@ -528,41 +538,40 @@ def create_range(elm): # float range
 def name_coords(ct): # Coord Type
     if ct == "0":
         print("ct-0 branch")
-        window["coord_1"].update("a   [AU]")
-        window["coord_1"].SetTooltip(" Semi-major axis ")
-        window["coord_2"].update(" e")
-        window["coord_2"].SetTooltip(" Eccentricity ")
-        window["coord_3"].update(" i   [ ° ] ")
-        window["coord_3"].SetTooltip(" Inclination ")
-        window["coord_4"].update(" \u03c9   [ ° ] ")
-        window["coord_4"].SetTooltip(" Argument of periapsis ")
-        window["coord_5"].update(" \u03a9   [ ° ] ")
-        window["coord_5"].SetTooltip(" Longitude of the ascending node ")
-        window["coord_6"].update(" M   [ ° ] ")
-        window["coord_6"].SetTooltip(" Mean anomaly ")
-        # \u03c9 = \N{greek small letter omega}
-        # \u03a9 = \N{greek capital letter omega}
+        window["coord_1"].update    ("a   [AU]")
+        window["coord_1"].SetTooltip(" Semi-major axis   [Astronomical Units]")
+        window["coord_2"].update    (" e")
+        window["coord_2"].SetTooltip(" Eccentricity   [pure number]")
+        window["coord_3"].update    (" i   [ ° ] ")
+        window["coord_3"].SetTooltip(" Inclination   [Degrees 0-360]")
+        window["coord_4"].update    (" \u03c9   [ ° ] ") # \u03c9 = \N{greek small letter omega}
+        window["coord_4"].SetTooltip(" Argument of periapsis   [Degrees 0-360]")
+        window["coord_5"].update    (" \u03a9   [ ° ] ") # \u03a9 = \N{greek capital letter omega}
+        window["coord_5"].SetTooltip(" Longitude of the ascending node   [Degrees 0-360]")
+        window["coord_6"].update    (" M   [ ° ] ")
+        window["coord_6"].SetTooltip(" Mean anomaly   [Degrees 0-360]")
         # \N{SUBSCRIPT two}
     elif ct == "1" or ct == "2":
         print("ct-1|2 branch")
-        window["coord_1"].update(" x   [?]")  # ,background_color="green")
-        window["coord_1"].SetTooltip(" x Position ")
-        window["coord_2"].update(" y   [?]")
-        window["coord_2"].SetTooltip(" y Position ")
-        window["coord_3"].update(" z   [?]")
-        window["coord_3"].SetTooltip(" z Position ")
-        window["coord_4"].update(" v_x   [?]")
-        window["coord_4"].SetTooltip(" x Velocity ")
-        window["coord_5"].update(" v_y   [?]")
-        window["coord_5"].SetTooltip(" y Velocity ")
-        window["coord_6"].update(" v_z   [?]")
-        window["coord_6"].SetTooltip(" z Velocity ")
+        window["coord_1"].update    (" x   [?]")  # ,background_color="green")
+        window["coord_1"].SetTooltip(" x Position   [?]")
+        window["coord_2"].update    (" y   [?]")
+        window["coord_2"].SetTooltip(" y Position   [?]")
+        window["coord_3"].update    (" z   [?]")
+        window["coord_3"].SetTooltip(" z Position   [?]")
+        window["coord_4"].update    (" v_x   [?]")
+        window["coord_4"].SetTooltip(" x Velocity   [?]")
+        window["coord_5"].update    (" v_y   [?]")
+        window["coord_5"].SetTooltip(" y Velocity   [?]")
+        window["coord_6"].update    (" v_z   [?]")
+        window["coord_6"].SetTooltip(" z Velocity   [?]")
     else:
         print("ct-no branch")
 #end def name_coords(ct)
 
 layout = create_layout()
-layout.append([sg.StatusBar(" Please create your Soloar System!", (93, 0), key="status", tooltip=" StatusBar ",
+layout.append([sg.StatusBar(" Please create your Constellation / Solar System!",
+                            (93, 0), key="status", tooltip=" StatusBar ",
                             background_color="grey")]) # doppelt!!!
 
 loc = (0, 0)
@@ -726,7 +735,7 @@ while True:
             result = san_check_and_calc(delta_iv) # list with 1 or 2 (status_msg) elements
             if len(result) > 1:
                 window["status"].update(
-                    " "+result[1]+" ",
+                    " Asteroids "+elm+": "+result[1]+" ",
                     text_color = "red" if result[0] == CALC_ERR_MSG else "white")
             result = result[0]
             window["ast_"+to_calc+"_"+elm].update(result)
