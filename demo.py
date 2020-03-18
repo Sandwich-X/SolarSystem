@@ -11,6 +11,9 @@ import PySimpleGUI as sg
 import os
 import pickle
 import numpy as np
+#import locale
+#locale.setlocale(locale.LC_ALL, '')  # Use '' for auto, or force e.g. to 'en_US.UTF-8'
+
 #import random
 
 CALC_ERR_MSG = "Error !\a" # CALCulation ERRor MeSsaGe
@@ -67,13 +70,16 @@ allchecks = [False for p in default_planets]
 allchecks[0] = True
 allchecks[1] = True
 mypics = []
-for root, dirs, files in os.walk("."):
-    # print(files)
+for curdir, subdirs, files in os.walk("."):
+    #print("curdir: ", curdir)  # CURrent DIRectory
+    #print("subdirs:", subdirs) # SUBDIRectories
+    #print("files:  ", files)   # FILES
     for f in files:
+        print("  f:", f)
         if f[-4:] == ".png":
-            mypics.append(os.path.join(root, f))
-print("mypics :",
-       mypics)
+            mypics.append(os.path.join(curdir, f))
+    #input()
+print("mypics :", mypics)
 
 # --- creating layout inside functions so that it can be used several times
 #     inside the main loop when creating new layouts. it is not allowed to
@@ -84,17 +90,22 @@ def recalc_total():
     sum = 1
     for elm in elements:
         try:
-            sum *= (float(values["ast_cnt_" + elm]) + 1 - delta_iv)
+            #print("elm:", elm)
+            #print('values["ast_cnt_"+elm]:', values["ast_cnt_"+elm])
+            #print('type(values["ast_cnt_"+elm]):',
+            #       type(values["ast_cnt_"+elm]))
+            sum *= (float(values["ast_cnt_"+elm]) + 1-delta_iv) # float sonst str-Error
         except:
-            #print("values[ast_cnt_" + e, "] :", values["ast_cnt_" + e] )
+            #print("values[ast_cnt_"+e, "] :", values["ast_cnt_"+e] )
             #print("delta_iv:", delta_iv)
             #window["status"].update ... ??? überschreibt vorherige Status-Meldung
-            print("error calculating count " + elm)
-            window["ast_total"].update("?5^6")
-            break
+            print("error calculating total count at:", elm, ":", values["ast_cnt_"+elm])
+            window["ast_total"].update(CALC_ERR_MSG)
+            break #for elm
     else:  # schleife lief vollständig durch ohne ein einziges break
-        print("recalculating without errors. Result =", sum)
-        window["ast_total"].update(try_2_int(sum)[0])
+        print("recalculating total count without errors. Result =", sum)
+        window["ast_total"].update(f'{try_2_int(sum):,}') # with locale :n
+    #end for elm in elements
 #end def recalc_total()
 
 def create_cols(checks):
@@ -113,7 +124,7 @@ def create_cols(checks):
                            #button_color=("black" if planet.name == "Sun" else "yellow", sg.theme_background_color())
                       )],
             [sg.Checkbox(text=planet.name+"  ", default=checks[i],
-                         key = "chk_" + planet.name,
+                         key  = "chk_" + planet.name,
                          tooltip = " " + planet.name + " ",
                          pad = (0,0),
                         )]], #end of layout
@@ -168,7 +179,7 @@ def create_layout(checks=allchecks, l2 = False): # l2: Layout2 ("Create")
 def create_layout2():
     newchecks = []
     for planet in default_planets.values():
-        newchecks.append(values["chk_" + planet.name])
+        newchecks.append(values["chk_"+planet.name])
     # print("checks =", checks)
     # create a COMPLETE NEW LAYOUT by function,
     #   do not re-use the old one by variable
@@ -193,7 +204,7 @@ def create_layout2():
     for i in range(values["extra"]):
         extra_planets["X"+str(i+1)] = Planet(name="X"+str(i+1))
     for p in list(default_planets.values())+list(extra_planets.values()):
-        if p.name[0] == "X" or values["chk_" + p.name]:
+        if p.name[0] == "X" or values["chk_"+p.name]:
             row = []
             # "natural" planet rows get only name as first column,
             # "extra" planet rows get name and a combofield to copy values
@@ -213,12 +224,12 @@ def create_layout2():
                     row.append(sg.Text("",size=sz1))
                 else:
                     row.append(sg.Input(p.__dict__[elm], size=sz1,
-                                       key = "val_" + elm + "_" + p.name))  # val=value
+                                       key = "val_" + elm+"_" + p.name))  # val=value
             #end for elm in elements
             #col_o.append([sg.Input(p.o, size=(15, 1),
             #                       key="val_o_" + p.name)])
             layout2.append(row)
-        #end if p.name[0] == "X" or values["chk_" + p.name]
+        #end if p.name[0] == "X" or values["chk_"+p.name]
     #end for p in list(default_planets.values())+list(extra_planets.values())
     #--- asteroids
     if values["asteroids"]:
@@ -226,9 +237,9 @@ def create_layout2():
         #--- asteroids min
         row = [sg.Text("Asteroids Minimum:", size=sz2)]
         for elm in elements:
-            row.append(sg.InputText(default_text="0.0", key="ast_min_" + elm,
+            row.append(sg.InputText(default_text="0.0", key="ast_min_"+elm,
                                     size=(9,1), pad=((4,0),0)))
-            row.append(sg.Button("*", key="ast_min_calc_" + elm,
+            row.append(sg.Button("*", key="ast_min_calc_"+elm,
                                  tooltip=" Calculate ",
                                  size=(0,1), pad=((4,6),0) ) )
         layout2.append(row)
@@ -241,9 +252,9 @@ def create_layout2():
         #--- asteroids max
         row = [sg.Text("Asteroids Maximum:", size=sz2)]
         for elm in elements:
-            row.append(sg.InputText(default_text="10.0", key="ast_max_" + elm,
+            row.append(sg.InputText(default_text="10.0", key="ast_max_"+elm,
                                     size=(9,1), pad=((4,0),0)) )
-            row.append(sg.Button("*", key="ast_max_calc_" + elm,
+            row.append(sg.Button("*", key="ast_max_calc_"+elm,
                                  tooltip=" Calculate ",
                                  size=(0,1), pad=((4,6),0) ) )
         layout2.append(row)
@@ -253,7 +264,7 @@ def create_layout2():
             row.append(sg.InputText(default_text="2.0", key="ast_stp_"+elm,
                                     size=(9,1), pad=((4,0),0),
                                     enable_events=True) )
-            row.append(sg.Button("*", key="ast_stp_calc_" + elm,
+            row.append(sg.Button("*", key="ast_stp_calc_"+elm,
                                  tooltip=" Calculate ",
                                  size=(0,1), pad=((4,6),0) ) )
         layout2.append(row)
@@ -270,7 +281,7 @@ def create_layout2():
             row.append(sg.InputText(default_text="5", key="ast_cnt_"+elm,
                                     size=(9,1), pad=((4,0),0),
                                     enable_events=True) )
-            row.append(sg.Button("*", key="ast_cnt_calc_" + elm,
+            row.append(sg.Button("*", key="ast_cnt_calc_"+elm,
                                  tooltip=" Calculate ",
                                  size=(0,1), pad=((4,6),0) ) )
         layout2.append(row)
@@ -304,41 +315,41 @@ def set_cnt_zero():
                             background_color="grey")
 #end def set_cnt_zero()
 
-def try_2_int(x): # TRY to 'convert' x (usually Asteroid_CouNT) to INTeger
+def try_2_int(x, ok=None): # TRY to 'convert' x (usually Asteroid_CouNT) to INTeger
     try:
         f = float(x) # float because int("1.0") does not work,
     except:          #     but int(float("1.0")) does
-        return x, False
+        return (x if ok is None else (x, False))
     i = int(f)
     if i == f:
-        return i, True
+        return (i if ok is None else (i, True))
     else:
-        return f, False
+        return (f if ok is None else (f, False))
 #end def try_2_int()
 
 def san_check_and_calc(iv_delta):
     #sanity_check:
     try:
-        a_min = float(values["ast_min_" + elm])
+        a_min = float(values["ast_min_"+elm])
         san_min = True
     except:
         san_min = False
     print("san_min:", san_min)
     try:
-        a_max = float(values["ast_max_" + elm])
+        a_max = float(values["ast_max_"+elm])
         san_max = True
     except:
         san_max = False
     print("san_max:", san_max)
     try:
-        a_stp = float(values["ast_stp_" + elm])
+        a_stp = float(values["ast_stp_"+elm])
         san_stp = True
     except:
         san_stp = False
     print("san_stp:", san_stp)
-    #print('values["ast_cnt_' + elm + '"] :',
-    #      values["ast_cnt_" + elm])
-    a_cnt, san_cnt = try_2_int(values["ast_cnt_" + elm])
+    print('values["ast_cnt_'+elm+'"] :',
+          values["ast_cnt_"+elm])
+    a_cnt, san_cnt = try_2_int(values["ast_cnt_"+elm], 1)
     print("san_cnt:", san_cnt) # , ", a_cnt:", a_cnt
     #end sanity check
     #--- start calculation:
@@ -495,9 +506,8 @@ def san_check_and_calc(iv_delta):
                             "Need value for 'Max' to calculate 'Count'!")
                 else:  # san_min=True and san_max=True
                     #print((try_2_int( (a_max - a_min) / a_stp + iv_delta ),))
-                    #print((try_2_int( (a_max - a_min) / a_stp + iv_delta )[0],))
                     #input("... ")
-                    return (try_2_int( (a_max - a_min) / a_stp + iv_delta )[0],)
+                    return (try_2_int( (a_max - a_min) / a_stp + iv_delta ),)
                             #"Successfully calculated 'Count'.")
                 #end if not san_min elif not san_max else
             #end if a_stp == 0 else
@@ -571,7 +581,7 @@ layout.append([sg.StatusBar(" Please create your Constellation / Solar System!",
                             (93, 0), key="status", tooltip=" StatusBar ",
                             background_color="grey")]) # doppelt!!!
 
-loc = (0, 0)
+loc = (0,0)
 window = sg.Window('N-Body Lie (1)', location=loc).Layout(layout)
 
 delta_iv = 0 # = Intervals, 1 = Values for asteroids
@@ -598,11 +608,12 @@ while True:
         layout2 = create_layout2()
         #print(layout2)
         window = sg.Window('N-Body Lie Integrator', location=loc).Layout(layout2).finalize()
-        name_coords("0")
         # finalize(), damit recalcen kann
+        win_tmp.close()
+        name_coords("0")
+        event, values = window.read(timeout=0) # sonst values leer
         recalc_total() # damit schon anfangs Zahl existiert
         # Problem: dict values ist noch nicht befüllt!
-        win_tmp.close()
         #window["coord_type"].Invoke("0: ELE")
     elif event == "Save": # SAVE all parameters
         print(values)
@@ -650,7 +661,7 @@ while True:
             f.write("0d0  0    /swsum(t0[tage]), nstep *** TO DO ***\n")
             f.write(values["integrator"] + "\n\n")
             for p in list(default_planets.values()) + list(extra_planets.values()):
-                if not values["chk_" + p.name] and p.name[0] != "X":
+                if not values["chk_"+p.name] and p.name[0] != "X":
                     continue # planet not check-selected and not an extra planet
                 for elm in elements:
                     print("p.name = '" + p.name + "'")
@@ -659,7 +670,7 @@ while True:
                         # sun has only mass field/value
                         f.write("0.0          ")
                     else:
-                        f.write(form_string[elm].format(float(values["val_" + elm + "_" + p.name] + " ")))
+                        f.write(form_string[elm].format(float(values["val_"+elm+"_"+p.name] + " ")))
                 #end for elm in elements
                 f.write("\n") # newline after each planet
             #end for p in list(default_planets.values()) + list(extra_planets.values())
@@ -702,7 +713,7 @@ while True:
         targetrow = event[:2] # zB x2
         for elm in elements:
             if sourceplanet[0] == "X":
-                window["val_" + elm + "_" + targetrow].update(values["val_"+elm+"_"+sourceplanet])
+                window["val_"+elm+"_"+targetrow].update(values["val_"+elm+"_"+sourceplanet])
             else:
                  window["val_"+elm+"_"+targetrow].update(default_planets[sourceplanet].__dict__[elm])
     #---- asteroids - stuff ------
@@ -714,7 +725,7 @@ while True:
         # recalc: subtract 1 from asteroids-counts
         for elm in elements:
             try:
-                window["ast_cnt_" + elm].update(try_2_int(values["ast_cnt_" + elm])[0] -1 )
+                window["ast_cnt_"+elm].update(try_2_int(values["ast_cnt_"+elm]) -1 )
             except:
                 pass
     elif event == "iv_v":
@@ -725,11 +736,10 @@ while True:
         # recalc: add 1 to asteroids-counts
         for elm in elements:
             try:
-                window["ast_cnt_" + elm].update(try_2_int(values["ast_cnt_" + elm])[0] +1 )
+                window["ast_cnt_"+elm].update(try_2_int(values["ast_cnt_"+elm]) +1 )
             except:
                 pass
-    elif "ast_" in event:
-        print("Asteroiden-Zeux, event:", event)
+    elif "ast_" in event: # ASTeroids stuff
         elm     = event[-1]  # last letter: ELeMent
         to_calc = event[4:7] # Buchstaben 4, 5 und 6; 7 ist nicht mehr dabei!
         #if to_calc == "ste": to_calc = "step"
@@ -753,21 +763,21 @@ while True:
             #    window[k].update(disabled=True)
             #--- calculating total count of asteroids
             if to_calc == "cnt" and result != CALC_ERR_MSG:
-                window["ast_cnt_" + elm].update(result)  # for total_count
+                window["ast_cnt_"+elm].update(result)  # for total_count
                 recalc_total()
                 if result != int(result):
-                    window["ast_" + to_calc + "_" + elm].update(background_color="#ffcccc")
+                    window["ast_"+to_calc+"_"+elm].update(background_color="#ffcccc")
                     window["status"].update(" Count must be a (" \
                                             + ("positive" if delta_iv else "non-negative") \
                                             +") integer! ")
                 else:
-                    window["ast_" + to_calc + "_" + elm].update(background_color="white")
+                    window["ast_"+to_calc+"_"+elm].update(background_color="white")
         else: # <if "_calc_" in event:>
             '''händische Änderung eines asteroiden-inputfeldes, 
             jetzt kontrollieren ob spalte erlaubte Werte liefert'''
             #--- enable calc buttons because of new manual change
             for tc in ("min", "max", "stp", "cnt"):
-                k = "ast_" +tc + "_calc_" + elm # key
+                k = "ast_" +tc+"_calc_"+elm # key
                 window[k].update(disabled=False)
             ### elm = event[-1]
             if "_cnt_" in event: # and "_calc_" not in event:
@@ -790,7 +800,7 @@ while True:
                 #result = 1
                 #for elm in elements:
                 #    try:
-                #        result *= float(values["ast_cnt_" + elm])
+                #        result *= float(values["ast_cnt_"+elm])
                 #    except:
                 #        print("error calculating count "+elm)
                 #        break
