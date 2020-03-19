@@ -293,7 +293,7 @@ def create_layout2():
         #layout2.append(row)
         #--- asteroids count ------
         # ------ random ----
-    #if values["asteroids"]
+    #end if values["asteroids"]
     layout2.append(
         [sg.StatusBar("", (115,1), key="status", tooltip=" StatusBar ",
                       background_color="grey"), # doppelt!!!
@@ -315,16 +315,16 @@ def set_cnt_zero():
                             background_color="grey")
 #end def set_cnt_zero()
 
-def try_2_int(x, ok=None): # TRY to 'convert' x (usually Asteroid_CouNT) to INTeger
-    try:
+def try_2_int(x, chk=False): # TRY to 'convert' x (usually Asteroid_CouNT) TO INTeger
+    try:                     #   return also sanity-CHecK?
         f = float(x) # float because int("1.0") does not work,
     except:          #     but int(float("1.0")) does
-        return (x if ok is None else (x, False))
+        return (x, False) if chk else x
     i = int(f)
     if i == f:
-        return (i if ok is None else (i, True))
+        return (i, True) if chk else i
     else:
-        return (f if ok is None else (f, False))
+        return (f, False) if chk else f
 #end def try_2_int()
 
 def san_check_and_calc(iv_delta):
@@ -580,11 +580,10 @@ layout = create_layout()
 layout.append([sg.StatusBar(" Please create your Constellation / Solar System!",
                             (93, 0), key="status", tooltip=" StatusBar ",
                             background_color="grey")]) # doppelt!!!
-
 loc = (0,0)
 window = sg.Window('N-Body Lie (1)', location=loc).Layout(layout)
 
-delta_iv = 0 # = Intervals, 1 = Values for asteroids
+delta_iv = 0 # = Intervals, 1 = Values for asteroids ???Zsmhg.
 
 while True:
     event, values = window.read()
@@ -610,11 +609,13 @@ while True:
         window = sg.Window('N-Body Lie Integrator', location=loc).Layout(layout2).finalize()
         # finalize(), damit recalcen kann
         win_tmp.close()
-        name_coords("0")
-        event, values = window.read(timeout=0) # sonst values leer
+        name_coords("0") # ???:
+        # This is not an officially supported feature.
+        #   This code will do what you're looking for:
+        #     window.Element(button_key_or_text).TKButton.invoke()
+        # This has been implemented as a call to: Button.Click()
+        event, values = window.read(timeout=0) # sonst dict values leer
         recalc_total() # damit schon anfangs Zahl existiert
-        # Problem: dict values ist noch nicht befüllt!
-        #window["coord_type"].Invoke("0: ELE")
     elif event == "Save": # SAVE all parameters
         print(values)
         filename = sg.PopupGetFile("Choose File Name for SAVE-ing")
@@ -676,7 +677,7 @@ while True:
             #end for p in list(default_planets.values()) + list(extra_planets.values())
             f.write("\n")  # newline after all planets
             #dbg = False
-            #??? hier geschachtelte fors mit deepcopy ersetzen
+            # instead of (fixed number of) nested for loops: ...
             for x_elm["a"] in create_range("a"):
                 #print("x_elm["a"] :", x_elm["a"])
                 for x_elm["e"] in create_range("e"):
@@ -698,6 +699,18 @@ while True:
                     #end for x_elm["i"]
                 #end for x_elm["e"]
             #end for x_elm["a"]
+            #... we use a flexible list solution:
+            comb_list   = [ [] ] # list of all combinations
+            ranges_list = [ ]    # list of ranges
+            # ??? ToDo: ohne Zwischenstadium ranges_list
+            for elm in elements:
+                ranges_list += [list(create_range(elm))]
+            print(ranges_list)
+            for rng in ranges_list:
+                print("rng =", rng, ":\n")
+                comb_list = [x1 + [x2] for x1 in comb_list for x2 in rng]
+                #print("total_list =", comb_list, "\n\n")
+            input()
             f.write("# a_[AU]        eccentricity      inclinat.     omega         Omega          mean_anom.   mass_[sun]\n")
         #end with open (filewrite, "w") as f
         #???continue
