@@ -8,13 +8,12 @@ oder bei allen rot, wenn nicht san_...
 '''
 
 import PySimpleGUI as sg
-import os
-import pickle
-import numpy as np
+import os          # os.path.join , os.walk
+import pickle      # pickle.dump , pickle.load
+import numpy as np # np.arange , np.linspace
+#import random
 #import locale
 #locale.setlocale(locale.LC_ALL, '')  # Use '' for auto, or force e.g. to 'en_US.UTF-8'
-
-#import random
 
 CALC_ERR_MSG = "Error !\a" # CALCulation ERRor MeSsaGe
 
@@ -536,10 +535,13 @@ def san_check_and_calc(iv_delta):
 #def san_check_and_calc()
 
 def create_range(elm): # float range
-    return np.arange(float(values["ast_min_"+elm]),
-                     float(values["ast_max_"+elm])
-                    +float(values["ast_stp_"+elm]),
-                     float(values["ast_stp_"+elm]))
+    return np.linspace(float(values["ast_min_"+elm])
+                      ,float(values["ast_max_"+elm])
+                      ,int  (values["ast_cnt_"+elm]) + 1-delta_iv )
+    #return np.arange(float(values["ast_min_"+elm]),
+    #                 float(values["ast_max_"+elm])
+    #                +float(values["ast_stp_"+elm]),
+    #                 float(values["ast_stp_"+elm]))
 #end def create_range(elm)
 
 def name_coords(ct): # Coord Type
@@ -651,16 +653,16 @@ while True:
         print("Button 'Write' pressed")
         #filename = sg.PopupGetFile("Choose File Name for SAVE-ing")
         filewrite = sg.PopupGetFile("Choose File Name for WRITE-ing")
-        with open (filewrite, "w") as f:
-            f.write("{:0g} {:0g}\n".format(float(values["time"]),float(values["delta_t"])))
-            f.write(" 0        /INI [0=EL,1=HEL,2=BAR] *** TO DO ***\n")
-            f.write(" 12       /N [Anzahl der Lie-Terme] *** TO DO ***\n")
-            f.write("{:2g} {:2g}     /N_masse,N_masselos\n".format(
-                    len(allchecks), int(values["extra"])))
-            f.write("{:3g}       /logeps\n".format(float(format(values["logeps"]))))
-            f.write("1D-11     /SWMINI = StepWidthMINImum *** TO DO ***\n")
-            f.write("0d0  0    /swsum(t0[tage]), nstep *** TO DO ***\n")
-            f.write(values["integrator"] + "\n\n")
+        with open (filewrite, "w") as fw: # "w" : write
+            fw.write("{:0g} {:0g}\n".format(float(values["time"]),float(values["delta_t"])))
+            fw.write(" 0        /INI [0=EL,1=HEL,2=BAR] *** TO DO ***\n")
+            fw.write(" 12       /N [Anzahl der Lie-Terme] *** TO DO ***\n")
+            fw.write("{:2g} {:2g}     /N_masse,N_masselos\n".format(
+                     len(allchecks), int(values["extra"])))
+            fw.write("{:3g}       /logeps\n".format(float(format(values["logeps"]))))
+            fw.write("1D-11     /SWMINI = StepWidthMINImum *** TO DO ***\n")
+            fw.write("0d0  0    /swsum(t0[tage]), nstep *** TO DO ***\n")
+            fw.write(values["integrator"] + "\n\n")
             for p in list(default_planets.values()) + list(extra_planets.values()):
                 if not values["chk_"+p.name] and p.name[0] != "X":
                     continue # planet not check-selected and not an extra planet
@@ -669,58 +671,56 @@ while True:
                     print("elm    = '" + elm    + "'")
                     if p.name == "Sun" and elm != "m":
                         # sun has only mass field/value
-                        f.write("0.0          ")
+                        fw.write("0.0          ")
                     else:
-                        f.write(form_string[elm].format(float(values["val_"+elm+"_"+p.name] + " ")))
+                        fw.write(form_string[elm].format(float(values["val_"+elm+"_"+p.name] + " ")))
                 #end for elm in elements
-                f.write("\n") # newline after each planet
+                fw.write("\n") # newline after each planet
             #end for p in list(default_planets.values()) + list(extra_planets.values())
-            f.write("\n")  # newline after all planets
+            fw.write("\n")  # newline after all planets
             #dbg = False
             # instead of (fixed number of) nested for loops: ...
-            for x_elm["a"] in create_range("a"):
-                #print("x_elm["a"] :", x_elm["a"])
-                for x_elm["e"] in create_range("e"):
-                    #print("  x_elm["e"] :", x_elm["e"])
-                    for x_elm["i"] in create_range("i"):
-                        #print("    x_elm["i"] :", x_elm["i"])
-                        for x_elm["o"] in create_range("o"):
-                            #print("      x_elm["o"] :", x_elm["o"])
-                            for x_elm["O"] in create_range("O"):
-                                #print("        x_elm["O"] :", x_elm["O"])
-                                for x_elm["M"] in create_range("M"):
-                                    #print("          x_elm["M"] :", x_elm["M"])
-                                    for elm in elements:
-                                        f.write(form_string[elm].format(x_elm[elm]))
-                                    f.write("0.0\n") # mass of asteroid
-                                #end for x_elm["M"]
-                            #end for x_elm["O"]
-                        #end for x_elm["o"]
-                    #end for x_elm["i"]
-                #end for x_elm["e"]
-            #end for x_elm["a"]
+            #for x_elm["a"] in create_range("a"):
+            #    #print("x_elm["a"] :", x_elm["a"])
+            #    for x_elm["e"] in create_range("e"):
+            #        #print("  x_elm["e"] :", x_elm["e"])
+            #        for x_elm["i"] in create_range("i"):
+            #            #print("    x_elm["i"] :", x_elm["i"])
+            #            for x_elm["o"] in create_range("o"):
+            #                #print("      x_elm["o"] :", x_elm["o"])
+            #                for x_elm["O"] in create_range("O"):
+            #                    #print("        x_elm["O"] :", x_elm["O"])
+            #                    for x_elm["M"] in create_range("M"):
+            #                        #print("          x_elm["M"] :", x_elm["M"])
+            #                        for elm in elements:
+            #                            #fw.write(form_string[elm].format(x_elm[elm]))
+            #                            pass
+            #                        #fw.write("0.0\n") # mass of asteroid
+            #                        pass
+            #                    #end for x_elm["M"]
+            #                #end for x_elm["O"]
+            #            #end for x_elm["o"]
+            #        #end for x_elm["i"]
+            #    #end for x_elm["e"]
+            ##end for x_elm["a"]
             #... we use a flexible list solution:
-            comb_list   = [ [] ] # list of all combinations
-            ranges_list = [ ]    # list of ranges
-            # ??? ToDo: ohne Zwischenstadium ranges_list
-            for elm in elements:
-                ranges_list += [list(create_range(elm))]
-            print(ranges_list)
-            for rng in ranges_list:
-                print("rng =", rng, ":\n")
-                comb_list = [x1 + [x2] for x1 in comb_list for x2 in rng]
-                #print("total_list =", comb_list, "\n\n")
-            input()
-            f.write("# a_[AU]        eccentricity      inclinat.     omega         Omega          mean_anom.   mass_[sun]\n")
-        #end with open (filewrite, "w") as f
-        #???continue
+            # disadv.: has to create a possibly huge list
+            comb_list = [[]] # list of all combinations, initial comb = []
+            for elm in elements[:-1]: # -1: without last (mass)
+                comb_list = [x1 + [x2] for x1 in comb_list \
+                                       for x2 in list(create_range(elm))] # ??? mit array-Version von linspace
+                                               # list(...) : array --> list
+            for comb in comb_list:
+                for i, x in enumerate(comb):
+                    fw.write(form_string[elements[i]].format(x))
+                fw.write("0.0\n") # mass of asteroid
+            fw.write("# a_[AU]        eccentricity      inclinat.     omega         Omega          mean_anom.   mass_[sun]\n")
+        #end with open (filewrite, "w") as fw
     elif event == "Run":   # RUN Fortran-program
         print("Button 'Run' pressed")
         continue
     elif event == "coord_type":
-        ct = values["coord_type"][0] # 1st letter
-        print("ct :", ct)
-        name_coords(ct)
+        name_coords(values["coord_type"][0]) # [0] : 1st letter: 0, 1 or 2
     elif "_copy" in event: # COPY values from "regular" planet to X-planet
         sourceplanet = values[event] # zB Jupiter
         targetrow = event[:2] # zB x2
@@ -729,28 +729,28 @@ while True:
                 window["val_"+elm+"_"+targetrow].update(values["val_"+elm+"_"+sourceplanet])
             else:
                  window["val_"+elm+"_"+targetrow].update(default_planets[sourceplanet].__dict__[elm])
-    #---- asteroids - stuff ------
+    #--- asteroids - stuff
     elif event == "iv_i":
         print("iv_i geklickt")
         if delta_iv == 0: # nothing to do
             continue # while-loop
         delta_iv = 0
-        # recalc: subtract 1 from asteroids-counts
-        for elm in elements:
+        for elm in elements: # recalc: subtract 1 from asteroids-counts
             try:
                 window["ast_cnt_"+elm].update(try_2_int(values["ast_cnt_"+elm]) -1 )
             except:
+                print("Could not subtract 1 from 'ast_cnt_"+elm+"':.", values["ast_cnt_"+elm])
                 pass
     elif event == "iv_v":
         print("iv_v geklickt")
         if delta_iv == 1: # nothing to do
             continue # while-loop
         delta_iv = 1
-        # recalc: add 1 to asteroids-counts
-        for elm in elements:
+        for elm in elements: # recalc: add 1 to asteroids-counts
             try:
                 window["ast_cnt_"+elm].update(try_2_int(values["ast_cnt_"+elm]) +1 )
             except:
+                print("Could not add 1 to 'ast_cnt_"+elm+"':.", values["ast_cnt_"+elm])
                 pass
     elif "ast_" in event: # ASTeroids stuff
         elm     = event[-1]  # last letter: ELeMent
@@ -785,15 +785,14 @@ while True:
                                             +") integer! ")
                 else:
                     window["ast_"+to_calc+"_"+elm].update(background_color="white")
-        else: # <if "_calc_" in event:>
+        else: #if "_calc_" in event
             '''händische Änderung eines asteroiden-inputfeldes, 
             jetzt kontrollieren ob spalte erlaubte Werte liefert'''
             #--- enable calc buttons because of new manual change
             for tc in ("min", "max", "stp", "cnt"):
                 k = "ast_" +tc+"_calc_"+elm # key
                 window[k].update(disabled=False)
-            ### elm = event[-1]
-            if "_cnt_" in event: # and "_calc_" not in event:
+            if "_cnt_" in event: # "_calc_" is not in event
                 """ausführen nur bei händischer wertänderung"""
                 print("recalculating....(because manual change event)")
                 # farb-check. int("1.0") ergibt error, float("1.0") ist erlaubt
@@ -808,7 +807,7 @@ while True:
                     window["status"].update(" Count must be an integer! ")
                 else:
                     window[event].update(background_color="white")
-                #  total count of asteroids ausrechnen
+                # total count of asteroids ausrechnen
                 recalc_total()
                 #result = 1
                 #for elm in elements:
@@ -821,7 +820,7 @@ while True:
                 #else:  # schleife lief durch ohne ein einziges break vollständig
                 #    print("recalculating without errors. Result=", result)
                 #    window["ast_total"].update("Total: {}".format(result))
-            #<if "_cnt_" in event: # and "_calc_" not in event:>
-        # <if "_calc_" in event:>
+            #end if "_cnt_" in event # "_calc_" is not in event
+        #end if "_calc_" in event
     #end if elif event
 print("Bye")
