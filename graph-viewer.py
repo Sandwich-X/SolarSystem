@@ -40,71 +40,46 @@ while True:
         break
     if event == "Read":
         data = {}
-        #data = {"x":[], "y":[], "z":[]}
-        x_nr = int(values["xnr"])
-        y_nr = int(values["ynr"])
-        z_nr = int(values["znr"])
-        dim3 = (z_nr != 0) # 3D: 3-DIMensional
-        print("dim3:   ", dim3)
-        #counter = 0
+        #         body    spalte2        spalte 3        spalte 5
+        #data = {"1": [[1,2,3,4,5,....], [5,5,5,5,....], [....]]    ,
+        #        "2": ...}
         with open(SOURCE_FILE) as sf:
             #--- 1st: check how many body(number)s and columns
             #         and create data:
-            for i in range(5): # 0..4 # 5 commentary lines at beginning
-                print("i:", i, sf.readline())
-            nam_cols = sf.readline().split() # NAMe of COLumns
-            print("nam_cols:", nam_cols)
-            line1 = sf.readline().split()
-            num_cols = len(line1)
-            print("line1:", line1)
-            print("num_cols:", num_cols)
-            body1 = line1[0]
-            num_bodies = 1
-            nam_bodies = [body1]
-            print("body1:", body1)
-            data[body1] = [[] for i in range(1,num_cols) ]
-            print("data:", data)
             while True:
-                body_nr = sf.readline().split()[0]
-                if body_nr == body1:
-                    break # while True
-                data[body_nr] = [[] for i in range(len(line1)-1) ]
-                num_bodies += 1
-                nam_bodies += body_nr
-            print("data:", data)
-            print("num_bodies:", num_bodies)
-            print("nam_bodies:", nam_bodies)
-            input()
-            #--- 2nd: rewind and read all data:
-            sf.seek(0)
-            for number, line in enumerate(sf):
-                #print("number:", number)
-                #print("line:", line)
-                #input()
-                if number < 6: # 1st 5 lines commentary
-                    continue
-                fields = line.split() # separation by any whitespace
-                #print("fields:", fields)
-                #input()
-                #counter += 1
-                #print(f"Got {counter}. datapoint:")
-                #print(" x-value:", fields[x_nr])
-                #print(" y-value:", fields[y_nr])
-                for i in range(1,num_cols):
-                    data[fields[0]][i-1].append(float(fields[i]))
-                #data[body_nr][y_nr-1].append(float(fields[y_nr]))
-                #if dim3:
-                    #data[body_nr][z_nr].append(float(fields[z_nr]))
-                    #print(" z-value:", fields[z_nr])
-                #print("data:", data)
-                #input()
-            #end for
-        #end with
-        #input()
-        print("#bodies = len(data)          :", len(data))
-        print("#cols   = len(data[body1])   :", len(data[body1]))
-        print("#data   = len(data[body1][0]):", len(data[body1][0]))
+                line = sf.readline()
+                if line[0] != "#":
+                    break
+                print("found comment line:", line)
+            nam_cols = line.split() # NAMe of COLumns
+            print("found headers:", line)
+            print("nam_cols:", nam_cols)
+            fields = sf.readline().split()  # data column
+            num_cols = len(fields)
+            while True:
+                 #fields = sf.readline().split()   # data column
+                 #num_cols = len(list1) # number of data columns in data file, including body
+                 bodynr = fields[0] #
+                 if bodynr not in data:
+                     data[bodynr] = [[] for i in range(1,num_cols) ] # create empty lists
+                 else:
+                     for i in range(1, num_cols):
+                         data[bodynr][i - 1].append(float(fields[i]))
+                 line = sf.readline()
+                 if line == "":
+                     break
+                 fields = line.split()  # data column
+                 #print("fields:",fields)
+        print("#bodies = len(data)          :", data.keys())
+        print("#cols   = len(data[bodynr])   :", len(data[bodynr]))
+        print("#data   = len(data[bodynr][0]):", len(data[bodynr][0]))
+    
     if event == "Show":
+        x_nr = int(values["xnr"])
+        y_nr = int(values["ynr"])
+        z_nr = int(values["znr"])
+        dim3 = (z_nr != 0)  # 3D: 3-DIMensional
+        print("dim3:   ", dim3)
         body_nr = values["bodynr"] # int(%)
         print("body_nr:", body_nr)
         #if len(data['x']) == 0 or len(data['y']) == 0:
